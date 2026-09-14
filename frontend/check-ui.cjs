@@ -97,6 +97,12 @@ const response = data => ({ok:true,json:async()=>data});
   assert.match(run(`eventTable([{event_id:'safe',attribution:{label:'unknown_behavior'},prediction:{class:'dos'},fusion:{decision:'anomalous'}}])`), /Unknown Behavior/);
   assert.match(run(`trendChart([{timestamp:'2026-09-14T00:00:00Z',anomalous:3}])`), /Anomalous: 3/);
 
+  // Replayed research captures can be years old; relative times stay readable.
+  const ago = seconds => new Date(Date.now() - seconds * 1000).toISOString();
+  assert.equal(run(`relative('${ago(7200)}')`), '2h ago');
+  assert.equal(run(`relative('${ago(3 * 86400)}')`), '3d ago');
+  assert.equal(run(`relative('${ago(8 * 31557600 + 100)}')`), '8y ago');
+
   // Real-data artifacts show their own escaped provenance warning and cross-capture evidence.
   run(`state.data={models:{items:[{version:'1.1.0',simulated_training:false,metrics:{},provenance:{warning:'<b>lab</b> captures'},evaluation:{protocol:'temporal_blocks',leave_capture_out_binary:{f1:.4321,false_positive_rate:.05}}}]}}`);
   const realModel = run('analyticsView()');

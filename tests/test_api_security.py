@@ -259,6 +259,25 @@ def test_incident_event_time_boundaries_and_simulation_separation(tmp_path):
     evidence.close()
 
 
+def test_incremental_incident_bounds_match_full_recomputation(tmp_path):
+    import random
+    from aegisweave.schema import Flow
+    rng = random.Random(7)
+    evidence = Store(tmp_path / "bounds.db", correlation_seconds=30, max_events=60)
+    fake = FakeEngine()
+    base = datetime.now(timezone.utc)
+    offsets = [second for second in range(0, 400, 7)] + [second + 20 for second in range(0, 400, 45)]
+    rng.shuffle(offsets)  # late arrivals and bridging events force merges
+    for index, seconds in enumerate(offsets):
+        evidence.add_event(fake.process(Flow.model_validate(flow(f"b{index}", timestamp=(base + timedelta(seconds=seconds)).isoformat()))))
+        stored = evidence.db.execute(
+            "SELECT i.first_epoch,i.last_epoch,MIN(e.event_epoch),MAX(e.event_epoch) FROM incidents i "
+            "JOIN incident_events ie ON ie.incident_id=i.id JOIN events e ON e.id=ie.event_id GROUP BY i.id").fetchall()
+        assert stored and all(abs(row[0] - row[2]) < 1e-6 and abs(row[1] - row[3]) < 1e-6 for row in stored)
+    assert len(evidence.events(limit=500)) == 60  # retention deletions happened and bounds stayed exact
+    evidence.close()
+
+
 def test_registry_preserves_distinct_fits_of_same_architecture(tmp_path):
     evidence = Store(tmp_path / "models.db")
     evidence.register_model({"version": "same-architecture", "id": "fit-one"}, "a" * 64)

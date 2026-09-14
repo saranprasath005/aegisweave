@@ -11,7 +11,8 @@ const title = value => String(value ?? 'Unavailable').replace(/_/g, ' ').replace
 const safePercent = value => Math.max(0, Math.min(100, Number(value || 0) * 100));
 const time = value => { const date = new Date(value); return Number.isNaN(date.valueOf()) ? '—' : date.toLocaleTimeString('en-GB', {timeZone:'UTC',hour:'2-digit',minute:'2-digit',second:'2-digit'}); };
 const dateTime = value => { const date = new Date(value); return Number.isNaN(date.valueOf()) ? '—' : `${date.toLocaleDateString('en-GB', {timeZone:'UTC',day:'2-digit',month:'short'})} · ${time(value)} UTC`; };
-const relative = value => { const delta = Math.max(0, (Date.now() - new Date(value).getTime()) / 1000); return Number.isFinite(delta) ? delta < 60 ? `${Math.floor(delta)}s ago` : delta < 3600 ? `${Math.floor(delta / 60)}m ago` : `${Math.floor(delta / 3600)}h ago` : '—'; };
+// Replayed research captures can be years old; keep the unit readable at every scale.
+const relative = value => { const delta = Math.max(0, (Date.now() - new Date(value).getTime()) / 1000); if (!Number.isFinite(delta)) return '—'; for (const [unit, size] of [['y', 31557600], ['d', 86400], ['h', 3600], ['m', 60]]) { if (delta >= size * (unit === 'd' ? 2 : 1) && (unit !== 'h' || delta < 172800)) return `${Math.floor(delta / size)}${unit} ago`; } return `${Math.floor(delta)}s ago`; };
 const paths = {
  grid:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
  pulse:'M2 12h5l3-8 4 16 3-8h5',
