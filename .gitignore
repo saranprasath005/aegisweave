@@ -1,0 +1,13 @@
+__pycache__/
+.pytest_cache/
+pytest-cache-files-*/
+.venv/
+*.pyc
+.env
+var/
+data/raw/
+node_modules/
+*.log
+.coverage
+htmlcov/
+.claude/

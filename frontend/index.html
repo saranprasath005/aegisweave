@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1017">
+  <title>AegisWeave — Network intelligence</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M20 2 36 11v18L20 38 4 29V11Z' fill='%23101822' stroke='%237be1d0' stroke-width='3'/%3E%3Cpath d='m10 26 10-16 10 16M15 21h10' fill='none' stroke='%237be1d0' stroke-width='3'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#overview" aria-label="AegisWeave overview">
+      <svg class="brand-mark" viewBox="0 0 44 48" fill="none" aria-hidden="true"><path d="m22 2 19 11v22L22 46 3 35V13Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 31 22 13l10 18M17 25h10M3 13l19 11 19-11M22 24v22" stroke="currentColor" stroke-width="1.5"/><circle cx="22" cy="24" r="3" fill="currentColor"/></svg>
+      <span>Aegis<span class="brand-light">Weave</span><small>NETWORK INTELLIGENCE</small></span>
+    </a>
+    <div class="workspace-label">WORKSPACE <span class="tiny-tag">LOCAL</span></div>
+    <nav id="navigation" aria-label="Main navigation"></nav>
+    <div class="sidebar-bottom">
+      <div class="safe-mode"><span class="status-dot"></span><div>Simulation environment<small>Responses are dry-run only</small></div></div>
+      <div class="profile"><span class="avatar">AW</span><div id="session-label">Connecting<small>Authenticating local session</small></div><button class="icon-button" id="sign-out" aria-label="Switch API token" title="Switch API token"></button></div>
+      <div class="sidebar-footnote">Evidence before action.<span>v1.0</span></div>
+    </div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><div class="breadcrumb"><button id="menu-toggle" class="icon-button mobile-menu" aria-label="Toggle navigation"></button><span>Workspace</span><span class="slash">/</span><strong id="breadcrumb-page">Overview</strong></div><div class="topbar-meta"><span id="connection-status" class="connection"><span class="status-dot muted-dot"></span>Connecting</span><span class="topbar-divider"></span><span class="mono" id="utc-clock">— UTC</span></div></header>
+    <main id="main" tabindex="-1">
+      <div class="page-heading"><div><div class="eyebrow" id="page-eyebrow">YOUR NETWORK, IN CONTEXT</div><h1 id="page-title">Security overview</h1><p id="page-description">An evidence-led view of network behavior and emerging threats.</p></div><div class="page-actions"><button class="button secondary" id="refresh-toggle"></button><button class="button primary" id="replay-demo"></button></div></div>
+      <div class="environment-banner"><span class="label-icon" id="simulation-icon"></span><span><strong>Simulation workspace.</strong> Replay generates synthetic telemetry. All response actions are simulated.</span><span class="banner-badge">SAFE BY DESIGN</span></div>
+      <div id="page-error" class="error-banner" hidden role="alert"></div>
+      <div id="content" aria-live="polite"><div class="loading-state"><span class="spinner"></span><h3>Connecting to the intelligence engine</h3><p>Loading observed telemetry and model status.</p></div></div>
+      <footer class="main-footer"><span>AEGISWEAVE <span class="footer-dot">·</span> PROPOSED ML-FIRST DETECTION ARCHITECTURE</span><span id="last-sync">Waiting for first sync</span></footer>
+    </main>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay" hidden></div>
+  <aside class="drawer" id="detail-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden><div class="drawer-header"><div><div class="eyebrow" id="drawer-eyebrow">INVESTIGATION</div><h2 id="drawer-title">Event intelligence</h2></div><button class="icon-button" id="close-drawer" aria-label="Close detail"></button></div><div id="drawer-content"></div></aside>
+  <dialog id="action-dialog" class="action-dialog"><form id="action-form"><div class="dialog-heading"><div><div class="eyebrow">CONTROLLED RESPONSE</div><h2 id="action-title">Request response</h2></div><button type="button" class="icon-button" id="close-action" aria-label="Close dialog"></button></div><p id="action-description"></p><div id="action-fields"></div><label class="field-label" for="action-reason">Analyst justification</label><textarea id="action-reason" rows="3" minlength="8" maxlength="500" required placeholder="Describe the evidence and reason for this action…"></textarea><div id="action-error" class="inline-error" role="alert" hidden></div><div class="dialog-footer"><button type="button" class="button secondary" id="cancel-action">Cancel</button><button type="submit" class="button primary" id="submit-action">Submit request</button></div></form></dialog>
+  <dialog id="login-dialog" class="action-dialog"><form id="login-form"><div class="eyebrow">SECURE WORKSPACE</div><h2>Connect to AegisWeave</h2><p id="login-description">Enter your configured API token to access this workspace. Your role is enforced by the server.</p><label class="field-label" for="api-token">API token</label><input id="api-token" type="password" required autocomplete="off" spellcheck="false" placeholder="Enter your access token"><label class="checkbox-label"><input type="checkbox" id="remember-token">Keep token for this browser tab session</label><div id="login-error" class="inline-error" hidden role="alert"></div><button type="submit" class="button primary full-width">Connect securely</button></form></dialog>
+  <div class="toast-stack" id="toasts" aria-live="polite"></div>
+</body>
+</html>

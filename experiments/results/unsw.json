@@ -1,0 +1,560 @@
+{
+  "experiment": "UNSW-NB15 reduced generic-counter public benchmark",
+  "simulated": false,
+  "generated_at": "2026-09-13T21:19:48.929433+00:00",
+  "seed": 42,
+  "warning": "A lab-generated public dataset is not live deployment evidence. Full causal AegisWeave temporal architecture is not evaluated here.",
+  "provenance": {
+    "train": {
+      "name": "UNSW-NB15",
+      "source": "https://research.unsw.edu.au/projects/unsw-nb15-dataset",
+      "file": "UNSW_NB15_training-set.csv",
+      "sha256": "bec7dd5ec88dc2a0ccc7a07879d338395ed7421750f675fd0339e07dfe0648fa",
+      "rows": 175341,
+      "feature_schema": "aegisweave.common.v1",
+      "features": [
+        "log_duration",
+        "log_packets",
+        "log_bytes",
+        "log_reverse_packets",
+        "log_reverse_bytes",
+        "log_packet_rate",
+        "log_byte_rate",
+        "log_mean_packet_size",
+        "reverse_packet_share",
+        "reverse_byte_share"
+      ],
+      "within_file_duplicate_feature_rows": 93383,
+      "temporal_available": false,
+      "unavailable": [
+        "validated host identity and ordered event chronology",
+        "SYN packet ratio",
+        "connection failure semantics"
+      ],
+      "notes": "Reduced common counters only; no dataset-specific ct_* features, labels, IDs, ports, IPs or timestamps are classifier inputs.",
+      "duration_unit": "seconds",
+      "split_policy": "Preserve supplied designated training and testing files"
+    },
+    "test": {
+      "name": "UNSW-NB15",
+      "source": "https://research.unsw.edu.au/projects/unsw-nb15-dataset",
+      "file": "UNSW_NB15_testing-set.csv",
+      "sha256": "734fe6642edf758f7c94d7d9149426b49d202fe8e7bf0bef47392489c3c0a559",
+      "rows": 82332,
+      "feature_schema": "aegisweave.common.v1",
+      "features": [
+        "log_duration",
+        "log_packets",
+        "log_bytes",
+        "log_reverse_packets",
+        "log_reverse_bytes",
+        "log_packet_rate",
+        "log_byte_rate",
+        "log_mean_packet_size",
+        "reverse_packet_share",
+        "reverse_byte_share"
+      ],
+      "within_file_duplicate_feature_rows": 39083,
+      "temporal_available": false,
+      "unavailable": [
+        "validated host identity and ordered event chronology",
+        "SYN packet ratio",
+        "connection failure semantics"
+      ],
+      "notes": "Reduced common counters only; no dataset-specific ct_* features, labels, IDs, ports, IPs or timestamps are classifier inputs.",
+      "duration_unit": "seconds",
+      "split_policy": "Preserve supplied designated training and testing files"
+    },
+    "download_mirror": "https://github.com/Nir-J/ML-Projects/tree/master/UNSW-Network_Packet_Classification",
+    "mirror_authenticity": "Primary SharePoint download timed out; mirror bytes hashed, not independently authenticated by the authors",
+    "expected_official_rows": {
+      "train": 175341,
+      "test": 82332
+    }
+  },
+  "protocol": {
+    "features": [
+      "log_duration",
+      "log_packets",
+      "log_bytes",
+      "log_reverse_packets",
+      "log_reverse_bytes",
+      "log_packet_rate",
+      "log_byte_rate",
+      "log_mean_packet_size",
+      "reverse_packet_share",
+      "reverse_byte_share"
+    ],
+    "seeded_training_sample": 60000,
+    "designated_split_preserved": true,
+    "validation_group": "exact normalized feature SHA256",
+    "training_partitions": {
+      "train": {
+        "rows": 45912,
+        "class_counts": {
+          "analysis": 480,
+          "backdoor": 415,
+          "dos": 3041,
+          "exploits": 8094,
+          "fuzzers": 4290,
+          "generic": 13016,
+          "normal": 13536,
+          "reconnaissance": 2730,
+          "shellcode": 279,
+          "worms": 31
+        }
+      },
+      "calibration": {
+        "rows": 5750,
+        "class_counts": {
+          "analysis": 113,
+          "backdoor": 96,
+          "dos": 582,
+          "exploits": 1370,
+          "fuzzers": 769,
+          "generic": 584,
+          "normal": 1928,
+          "reconnaissance": 268,
+          "shellcode": 38,
+          "worms": 2
+        }
+      },
+      "fusion": {
+        "rows": 3925,
+        "class_counts": {
+          "analysis": 31,
+          "backdoor": 34,
+          "dos": 218,
+          "exploits": 917,
+          "fuzzers": 603,
+          "generic": 43,
+          "normal": 1810,
+          "reconnaissance": 227,
+          "shellcode": 34,
+          "worms": 8
+        }
+      },
+      "tuning": {
+        "rows": 4413,
+        "class_counts": {
+          "analysis": 60,
+          "backdoor": 52,
+          "dos": 356,
+          "exploits": 1046,
+          "fuzzers": 560,
+          "generic": 45,
+          "normal": 1889,
+          "reconnaissance": 365,
+          "shellcode": 37,
+          "worms": 3
+        }
+      }
+    },
+    "preprocessing": "fixed log1p/rate features; scalers fit on their own training partitions only",
+    "imbalance": "balanced supervised sample weights; no oversampling; validation FPR budget 0.05",
+    "temperature": 1.2413469281895888,
+    "unknown_test_classes": [],
+    "temporal_available": false,
+    "behavior_profile_available": false
+  },
+  "leakage": {
+    "train_validation_duplicate_groups_disjoint": true,
+    "test_rows_matching_any_designated_train_normalized_vector": 36516,
+    "test_rows_without_train_feature_overlap": 45816,
+    "interpretation": "Some collisions may be independent flows with identical reduced counters; filtering is conservative. Official test itself is never reshuffled."
+  },
+  "official_test_all_rows": {
+    "baseline_logistic": {
+      "accuracy": 0.7452509352378176,
+      "precision": 0.8379863462285619,
+      "recall": 0.6661078267007853,
+      "f1": 0.742226482806086,
+      "false_positive_rate": 0.15778378378378377,
+      "false_negative_rate": 0.33389217329921467,
+      "roc_auc": 0.7929096599025567,
+      "pr_auc": 0.7608713116128869,
+      "brier_score": 0.20750828094599905,
+      "threshold": 0.9071569369870056,
+      "confusion_matrix": {
+        "tn": 31162,
+        "fp": 5838,
+        "fn": 15136,
+        "tp": 30196
+      },
+      "samples": 82332
+    },
+    "supervised": {
+      "accuracy": 0.8875771267550892,
+      "precision": 0.9161014994232988,
+      "recall": 0.8760478249360275,
+      "f1": 0.8956270720101035,
+      "false_positive_rate": 0.0982972972972973,
+      "false_negative_rate": 0.12395217506397246,
+      "roc_auc": 0.9654118914864744,
+      "pr_auc": 0.9739169871621646,
+      "brier_score": 0.1422924724173438,
+      "threshold": 0.9106354342835401,
+      "confusion_matrix": {
+        "tn": 33363,
+        "fp": 3637,
+        "fn": 5619,
+        "tp": 39713
+      },
+      "samples": 82332
+    },
+    "anomaly_only": {
+      "accuracy": 0.45396686586017587,
+      "precision": 0.5516767454645409,
+      "recall": 0.04427336098120533,
+      "f1": 0.0819685521748009,
+      "false_positive_rate": 0.04408108108108108,
+      "false_negative_rate": 0.9557266390187946,
+      "roc_auc": 0.6908684668189764,
+      "pr_auc": 0.6427967087329913,
+      "brier_score": 0.26664218342714613,
+      "threshold": 0.9024896265560165,
+      "confusion_matrix": {
+        "tn": 35369,
+        "fp": 1631,
+        "fn": 43325,
+        "tp": 2007
+      },
+      "samples": 82332
+    },
+    "reduced_hybrid": {
+      "accuracy": 0.8964436671039208,
+      "precision": 0.926904518882806,
+      "recall": 0.8814303361863585,
+      "f1": 0.90359565807327,
+      "false_positive_rate": 0.08516216216216216,
+      "false_negative_rate": 0.11856966381364158,
+      "roc_auc": 0.967654365331095,
+      "pr_auc": 0.9756233742596306,
+      "brier_score": 0.10013269550249052,
+      "threshold": 0.8042331216427892,
+      "confusion_matrix": {
+        "tn": 33849,
+        "fp": 3151,
+        "fn": 5375,
+        "tp": 39957
+      },
+      "samples": 82332
+    }
+  },
+  "test_without_train_feature_overlap": {
+    "baseline_logistic": {
+      "accuracy": 0.6199799196787149,
+      "precision": 0.520180250783699,
+      "recall": 0.15070670375205766,
+      "f1": 0.23370450244267418,
+      "false_positive_rate": 0.08684705131387638,
+      "false_negative_rate": 0.8492932962479424,
+      "roc_auc": 0.6336046092495303,
+      "pr_auc": 0.4753181028787875,
+      "brier_score": 0.2796693505839208,
+      "threshold": 0.9071569369870056,
+      "confusion_matrix": {
+        "tn": 25750,
+        "fp": 2449,
+        "fn": 14962,
+        "tp": 2655
+      },
+      "samples": 45816
+    },
+    "supervised": {
+      "accuracy": 0.820193818753274,
+      "precision": 0.7899227202472953,
+      "recall": 0.7252653686779815,
+      "f1": 0.7562144886363636,
+      "false_positive_rate": 0.12050072697613391,
+      "false_negative_rate": 0.27473463132201853,
+      "roc_auc": 0.913753489024375,
+      "pr_auc": 0.8753726508801424,
+      "brier_score": 0.21172855067415633,
+      "threshold": 0.9106354342835401,
+      "confusion_matrix": {
+        "tn": 24801,
+        "fp": 3398,
+        "fn": 4840,
+        "tp": 12777
+      },
+      "samples": 45816
+    },
+    "anomaly_only": {
+      "accuracy": 0.6168150864326872,
+      "precision": 0.5093932861102556,
+      "recall": 0.0938865868195493,
+      "f1": 0.1585506134969325,
+      "false_positive_rate": 0.05649136494201922,
+      "false_negative_rate": 0.9061134131804507,
+      "roc_auc": 0.6106015576259567,
+      "pr_auc": 0.4613124966220617,
+      "brier_score": 0.299062828082365,
+      "threshold": 0.9024896265560165,
+      "confusion_matrix": {
+        "tn": 26606,
+        "fp": 1593,
+        "fn": 15963,
+        "tp": 1654
+      },
+      "samples": 45816
+    },
+    "reduced_hybrid": {
+      "accuracy": 0.8360398114195914,
+      "precision": 0.8192329563404309,
+      "recall": 0.7359936425043991,
+      "f1": 0.7753857194115537,
+      "false_positive_rate": 0.10145749849285436,
+      "false_negative_rate": 0.26400635749560086,
+      "roc_auc": 0.9208691807042371,
+      "pr_auc": 0.8829564126591264,
+      "brier_score": 0.14895521544323015,
+      "threshold": 0.8042331216427892,
+      "confusion_matrix": {
+        "tn": 25338,
+        "fp": 2861,
+        "fn": 4651,
+        "tp": 12966
+      },
+      "samples": 45816
+    }
+  },
+  "supervised_multiclass_official_test": {
+    "analysis": {
+      "precision": 0.03657314629258517,
+      "recall": 0.21565731166912852,
+      "f1-score": 0.06254015849218247,
+      "support": 677.0
+    },
+    "backdoor": {
+      "precision": 0.08754908754908755,
+      "recall": 0.6500857632933105,
+      "f1-score": 0.15431596091205213,
+      "support": 583.0
+    },
+    "dos": {
+      "precision": 0.3334251101321586,
+      "recall": 0.2961604304230863,
+      "f1-score": 0.31368993653671806,
+      "support": 4089.0
+    },
+    "exploits": {
+      "precision": 0.7680594009564561,
+      "recall": 0.5482393100970177,
+      "f1-score": 0.6397945277282734,
+      "support": 11132.0
+    },
+    "fuzzers": {
+      "precision": 0.25551042152227477,
+      "recall": 0.6329594193335533,
+      "f1-score": 0.36405901608235686,
+      "support": 6062.0
+    },
+    "generic": {
+      "precision": 0.9995050049499505,
+      "recall": 0.9630120290392666,
+      "f1-score": 0.9809192238145359,
+      "support": 18871.0
+    },
+    "normal": {
+      "precision": 0.9901530211270861,
+      "recall": 0.5788648648648649,
+      "f1-score": 0.7306032644846583,
+      "support": 37000.0
+    },
+    "reconnaissance": {
+      "precision": 0.7176724137931034,
+      "recall": 0.8572654462242563,
+      "f1-score": 0.7812825860271115,
+      "support": 3496.0
+    },
+    "shellcode": {
+      "precision": 0.09486640648453917,
+      "recall": 0.8359788359788359,
+      "f1-score": 0.17039633324346184,
+      "support": 378.0
+    },
+    "worms": {
+      "precision": 0.28125,
+      "recall": 0.6136363636363636,
+      "f1-score": 0.38571428571428573,
+      "support": 44.0
+    },
+    "accuracy": 0.6632536559296507,
+    "macro avg": {
+      "precision": 0.4564564012807241,
+      "recall": 0.6191859774559684,
+      "f1-score": 0.45833152930356363,
+      "support": 82332.0
+    },
+    "weighted avg": {
+      "precision": 0.8452686176761338,
+      "recall": 0.6632536559296507,
+      "f1-score": 0.7178265450006882,
+      "support": 82332.0
+    }
+  },
+  "external_validation": {
+    "status": "not_run",
+    "reason": "CIC capture CSV not supplied; no cross-dataset effectiveness claim."
+  },
+  "open_set_attribution": {
+    "withheld_families": [
+      "analysis",
+      "backdoor",
+      "shellcode",
+      "worms"
+    ],
+    "selection": "four smallest families, fixed before results were observed",
+    "training_rows": 51658,
+    "calibration_rows": 8342,
+    "temperature": 1.0514624411341436,
+    "attribution_rule": {
+      "minimum_confidence": 0.7,
+      "attribution_percentile": 0.99,
+      "method": {
+        "method": "class-conditional 5-NN robust-scaled distance, percentile among held-out calibration flows of the same class",
+        "k": 5,
+        "reference_rows": {
+          "dos": 2500,
+          "exploits": 2500,
+          "fuzzers": 2500,
+          "generic": 2500,
+          "normal": 2500,
+          "reconnaissance": 2500
+        },
+        "calibration_rows": {
+          "dos": 368,
+          "exploits": 1765,
+          "fuzzers": 1218,
+          "generic": 709,
+          "normal": 3714,
+          "reconnaissance": 568
+        },
+        "unsupported_classes": []
+      }
+    },
+    "withheld_family_test_rows": {
+      "rows": 1682,
+      "attributed_correct_type": 0.0,
+      "attributed_wrong_type": 0.0624256837098692,
+      "withheld_outside_class_support": 0.0,
+      "withheld_low_confidence": 0.9143876337693222,
+      "predicted_normal": 0.02318668252080856,
+      "ablation_without_support_wrong_type": 0.0624256837098692,
+      "ablation_without_support_correct_type": 0.0
+    },
+    "per_withheld_family": {
+      "analysis": {
+        "rows": 677,
+        "attributed_correct_type": 0.0,
+        "attributed_wrong_type": 0.0014771048744460858,
+        "withheld_outside_class_support": 0.0,
+        "withheld_low_confidence": 0.9601181683899557,
+        "predicted_normal": 0.03840472673559823,
+        "ablation_without_support_wrong_type": 0.0014771048744460858,
+        "ablation_without_support_correct_type": 0.0
+      },
+      "backdoor": {
+        "rows": 583,
+        "attributed_correct_type": 0.0,
+        "attributed_wrong_type": 0.024013722126929673,
+        "withheld_outside_class_support": 0.0,
+        "withheld_low_confidence": 0.9639794168096055,
+        "predicted_normal": 0.012006861063464836,
+        "ablation_without_support_wrong_type": 0.024013722126929673,
+        "ablation_without_support_correct_type": 0.0
+      },
+      "shellcode": {
+        "rows": 378,
+        "attributed_correct_type": 0.0,
+        "attributed_wrong_type": 0.21693121693121692,
+        "withheld_outside_class_support": 0.0,
+        "withheld_low_confidence": 0.7777777777777778,
+        "predicted_normal": 0.005291005291005291,
+        "ablation_without_support_wrong_type": 0.21693121693121692,
+        "ablation_without_support_correct_type": 0.0
+      },
+      "worms": {
+        "rows": 44,
+        "attributed_correct_type": 0.0,
+        "attributed_wrong_type": 0.18181818181818182,
+        "withheld_outside_class_support": 0.0,
+        "withheld_low_confidence": 0.7272727272727273,
+        "predicted_normal": 0.09090909090909091,
+        "ablation_without_support_wrong_type": 0.18181818181818182,
+        "ablation_without_support_correct_type": 0.0
+      }
+    },
+    "known_attack_family_test_rows": {
+      "rows": 43650,
+      "attributed_correct_type": 0.6414432989690722,
+      "attributed_wrong_type": 0.01709049255441008,
+      "withheld_outside_class_support": 0.00029782359679266895,
+      "withheld_low_confidence": 0.3335624284077892,
+      "predicted_normal": 0.007605956471935854,
+      "ablation_without_support_wrong_type": 0.01711340206185567,
+      "ablation_without_support_correct_type": 0.6417182130584193
+    },
+    "benign_test_rows": {
+      "rows": 37000,
+      "attributed_correct_type": 0.0,
+      "attributed_wrong_type": 0.1503783783783784,
+      "withheld_outside_class_support": 0.00045945945945945947,
+      "withheld_low_confidence": 0.243,
+      "predicted_normal": 0.6061621621621621,
+      "ablation_without_support_wrong_type": 0.15083783783783783,
+      "ablation_without_support_correct_type": 0.0
+    },
+    "classifier_and_support_ms_per_flow_batch": 0.22600328426370977,
+    "interpretation": "Reduced generic counters only; UNSW families overlap heavily in these features, so this measures the support check's value under hard conditions, not zero-day detection."
+  },
+  "hyperparameters": {
+    "supervised": {
+      "categorical_features": "from_dtype",
+      "class_weight": null,
+      "early_stopping": false,
+      "interaction_cst": null,
+      "l2_regularization": 2.0,
+      "learning_rate": 0.09,
+      "loss": "log_loss",
+      "max_bins": 255,
+      "max_depth": null,
+      "max_features": 1.0,
+      "max_iter": 95,
+      "max_leaf_nodes": 15,
+      "min_samples_leaf": 30,
+      "monotonic_cst": null,
+      "n_iter_no_change": 10,
+      "random_state": 42,
+      "scoring": "loss",
+      "tol": 1e-07,
+      "validation_fraction": 0.1,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "anomaly": {
+      "bootstrap": false,
+      "contamination": "auto",
+      "max_features": 1.0,
+      "max_samples": 256,
+      "n_estimators": 80,
+      "n_jobs": 1,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "fusion_C": 0.5
+  },
+  "performance": {
+    "components_batch_ms_per_flow": 0.024204309381523664,
+    "reduced_hybrid_single_flow_ms_p50": 6.828649999988556,
+    "reduced_hybrid_single_flow_ms_p95": 7.477800000242496,
+    "process_rss_bytes_at_end": 329461760,
+    "cpu_seconds": 32.90625,
+    "wall_seconds": 33.150536099999954,
+    "platform": "Windows-11-10.0.26200-SP0",
+    "threads": 1
+  },
+  "deployment": "benchmark-only: never loaded into streaming production interface"
+}

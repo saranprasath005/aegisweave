@@ -1,0 +1,20 @@
+{
+  "detection": {
+    "malicious_threshold": 0.78,
+    "suspicious_threshold": 0.42,
+    "minimum_confidence": 0.70,
+    "minimum_reliability": 0.50,
+    "anomaly_threshold": 0.95,
+    "behavior_threshold": 0.85,
+    "attribution_percentile": 0.99
+  },
+  "risk": {
+    "medium_threshold": 40,
+    "high_threshold": 70,
+    "critical_threshold": 85
+  },
+  "assets": {
+    "10.0.0.10": 0.9,
+    "10.0.0.53": 0.7
+  }
+}
