@@ -199,7 +199,7 @@ Episode-bootstrap 95 % CI for F1(full) − F1(supervised): [0.023, 0.144].
 | attacks given a wrong known type | — | 0.26 % | 0.26 % |
 | **withheld `unknown_beacon` family (337 flows)** | 26 malicious + 311 suspicious, all "scan" | **337 anomalous, 0 invented types** | 26 malicious + 311 suspicious, all "scan" |
 
-Latency: 6.8 ms p50 / 7.5 ms p95 per event including explanation (one thread, Intel desktop CPU); RSS ≈ 195 MB.
+Latency: 7.7 ms p50 / 8.5 ms p95 per event including explanation (one thread, Intel desktop CPU); RSS ≈ 198 MB.
 
 ### UNSW-NB15 (`experiments/results/unsw.json`; real lab traffic, reduced to 10 generic counters)
 

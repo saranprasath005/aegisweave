@@ -1,0 +1,1398 @@
+{
+ "synthetic": {
+  "seed": 42,
+  "test_samples": 1348,
+  "variants": {
+   "baseline_logistic": {
+    "precision": 0.9781879194630873,
+    "recall": 0.7650918635170604,
+    "f1": 0.8586156111929307,
+    "false_positive_rate": 0.02218430034129693,
+    "roc_auc": 0.9389741384715989,
+    "pr_auc": 0.962189653698997,
+    "samples": 1348
+   },
+   "supervised": {
+    "precision": 0.977810650887574,
+    "recall": 0.8674540682414699,
+    "f1": 0.9193324061196105,
+    "false_positive_rate": 0.025597269624573378,
+    "roc_auc": 0.952172520670411,
+    "pr_auc": 0.9720858827525929,
+    "samples": 1348
+   },
+   "anomaly_only": {
+    "precision": 0.8934280639431617,
+    "recall": 0.6601049868766404,
+    "f1": 0.759245283018868,
+    "false_positive_rate": 0.10238907849829351,
+    "roc_auc": 0.8423069343294545,
+    "pr_auc": 0.8844603035165289,
+    "samples": 1348
+   },
+   "temporal_only": {
+    "precision": 0.9743918053777209,
+    "recall": 0.9986876640419947,
+    "f1": 0.9863901490602722,
+    "false_positive_rate": 0.034129692832764506,
+    "roc_auc": 0.9997043884872753,
+    "pr_auc": 0.999776340393577,
+    "samples": 1348
+   },
+   "full": {
+    "precision": 0.9973614775725593,
+    "recall": 0.9921259842519685,
+    "f1": 0.9947368421052631,
+    "false_positive_rate": 0.0034129692832764505,
+    "roc_auc": 0.9998029256581835,
+    "pr_auc": 0.9998559228130776,
+    "samples": 1348
+   },
+   "without_temporal": {
+    "precision": 0.9387222946544981,
+    "recall": 0.9448818897637795,
+    "f1": 0.9417920209287116,
+    "false_positive_rate": 0.08020477815699659,
+    "roc_auc": 0.9865071260290417,
+    "pr_auc": 0.9905345374052056,
+    "samples": 1348
+   },
+   "without_anomaly": {
+    "precision": 0.9806701030927835,
+    "recall": 0.9986876640419947,
+    "f1": 0.9895968790637191,
+    "false_positive_rate": 0.025597269624573378,
+    "roc_auc": 0.9998387573566956,
+    "pr_auc": 0.999880050642711,
+    "samples": 1348
+   },
+   "without_profile": {
+    "precision": 0.9986789960369881,
+    "recall": 0.9921259842519685,
+    "f1": 0.9953917050691244,
+    "false_positive_rate": 0.0017064846416382253,
+    "roc_auc": 0.9998589126871087,
+    "pr_auc": 0.999895116906903,
+    "samples": 1348
+   }
+  },
+  "bootstrap": {
+   "resamples": 250,
+   "metric": "full F1 minus supervised F1",
+   "observed_delta": 0.07540443598565261,
+   "percentile_95_interval": [
+    0.022621454504019492,
+    0.1441505505991631
+   ]
+  },
+  "decisions": {
+   "benign_flows": 586,
+   "attack_flows": 762,
+   "benign_normal_rate": 0.8907849829351536,
+   "benign_abstention_rate": 0.09556313993174062,
+   "benign_alert_rate": 0.013651877133105802,
+   "benign_malicious_rate": 0.0,
+   "attack_flagged_rate": 0.9960629921259843,
+   "attack_malicious_rate": 0.8740157480314961,
+   "attack_correct_attribution_rate": 0.8740157480314961,
+   "attack_wrong_attribution_rate": 0.0026246719160104987
+  },
+  "decision_counts": {
+   "normal": {
+    "normal": 522,
+    "suspicious": 0,
+    "anomalous": 8,
+    "malicious": 0,
+    "unknown": 56
+   },
+   "exfiltration": {
+    "normal": 0,
+    "suspicious": 17,
+    "anomalous": 1,
+    "malicious": 154,
+    "unknown": 16
+   },
+   "brute_force": {
+    "normal": 0,
+    "suspicious": 7,
+    "anomalous": 0,
+    "malicious": 264,
+    "unknown": 2
+   },
+   "dos": {
+    "normal": 3,
+    "suspicious": 29,
+    "anomalous": 0,
+    "malicious": 64,
+    "unknown": 16
+   },
+   "scan": {
+    "normal": 0,
+    "suspicious": 1,
+    "anomalous": 0,
+    "malicious": 184,
+    "unknown": 4
+   }
+  },
+  "withheld": {
+   "normal": 0,
+   "suspicious": 0,
+   "anomalous": 337,
+   "malicious": 0,
+   "unknown": 0
+  },
+  "withheld_ablation": {
+   "normal": 0,
+   "suspicious": 311,
+   "anomalous": 0,
+   "malicious": 26,
+   "unknown": 0
+  },
+  "ablation_test": {
+   "benign_flows": 586,
+   "attack_flows": 762,
+   "benign_normal_rate": 0.8651877133105802,
+   "benign_abstention_rate": 0.08703071672354949,
+   "benign_alert_rate": 0.04778156996587031,
+   "benign_malicious_rate": 0.0,
+   "attack_flagged_rate": 0.9960629921259843,
+   "attack_malicious_rate": 0.8779527559055118,
+   "attack_correct_attribution_rate": 0.8779527559055118,
+   "attack_wrong_attribution_rate": 0.0026246719160104987
+  },
+  "stress": {
+   "heldout_unknown": {
+    "f1": 0.6895787139689579,
+    "recall": 0.5262267343485617,
+    "false_positive_rate": 0.0
+   },
+   "covariate_shift": {
+    "f1": 0.9827586206896551,
+    "recall": 0.9803439803439803,
+    "false_positive_rate": 0.014814814814814815
+   },
+   "feature_manipulation": {
+    "f1": 0.9907529722589168,
+    "recall": 0.984251968503937,
+    "false_positive_rate": 0.0034129692832764505
+   }
+  },
+  "latency": {
+   "p50": 7.677699999476317,
+   "p95": 8.546625002782093
+  },
+  "protocol_note": "Parameters fixed within each run; this seed-42 test was inspected during implementation and is exploratory, not an untouched confirmatory set",
+  "leakage": [
+   "episode disjointness",
+   "event identity",
+   "exact normalized feature hash"
+  ]
+ },
+ "inherited": {
+  "benign": {
+   "normal": 208,
+   "suspicious": 1,
+   "malicious": 0,
+   "unknown": 377,
+   "n": 586
+  },
+  "beacon": {
+   "suspicious": 311,
+   "malicious": 26,
+   "n": 337
+  },
+  "source": "docs/PROJECT_ASSESSMENT.md",
+  "verified_in_doc": true
+ },
+ "confirmation": {
+  "seed": 381947,
+  "binary": {
+   "precision": 0.9993434011818779,
+   "recall": 0.9928245270711024,
+   "f1": 0.9960732984293194,
+   "false_positive_rate": 0.0008968609865470852,
+   "roc_auc": 0.9999157547409897,
+   "pr_auc": 0.9999396990368833,
+   "samples": 2648
+  },
+  "decisions": {
+   "benign_flows": 1115,
+   "attack_flows": 1533,
+   "benign_normal_rate": 0.8959641255605382,
+   "benign_abstention_rate": 0.0968609865470852,
+   "benign_alert_rate": 0.007174887892376682,
+   "benign_malicious_rate": 0.0,
+   "attack_flagged_rate": 0.994781474233529,
+   "attack_malicious_rate": 0.867579908675799,
+   "attack_correct_attribution_rate": 0.868232224396608,
+   "attack_wrong_attribution_rate": 0.005870841487279843
+  },
+  "withheld": {
+   "normal": 0,
+   "suspicious": 0,
+   "anomalous": 614,
+   "malicious": 0,
+   "unknown": 0
+  },
+  "warning": "Fresh draws from the same hand-designed generator after implementation fixes. This is not independent public or real-world validation, and was not preregistered."
+ },
+ "unsw": {
+  "rows": {
+   "train": 175341,
+   "test": 82332
+  },
+  "training_sample": 60000,
+  "features": [
+   "log_duration",
+   "log_packets",
+   "log_bytes",
+   "log_reverse_packets",
+   "log_reverse_bytes",
+   "log_packet_rate",
+   "log_byte_rate",
+   "log_mean_packet_size",
+   "reverse_packet_share",
+   "reverse_byte_share"
+  ],
+  "overlap": 36516,
+  "unseen": 45816,
+  "all": {
+   "baseline_logistic": {
+    "precision": 0.8379863462285619,
+    "recall": 0.6661078267007853,
+    "f1": 0.742226482806086,
+    "false_positive_rate": 0.15778378378378377,
+    "roc_auc": 0.7929096599025567,
+    "pr_auc": 0.7608713116128869,
+    "samples": 82332
+   },
+   "supervised": {
+    "precision": 0.9161014994232988,
+    "recall": 0.8760478249360275,
+    "f1": 0.8956270720101035,
+    "false_positive_rate": 0.0982972972972973,
+    "roc_auc": 0.9654118914864744,
+    "pr_auc": 0.9739169871621646,
+    "samples": 82332
+   },
+   "anomaly_only": {
+    "precision": 0.5516767454645409,
+    "recall": 0.04427336098120533,
+    "f1": 0.0819685521748009,
+    "false_positive_rate": 0.04408108108108108,
+    "roc_auc": 0.6908684668189764,
+    "pr_auc": 0.6427967087329913,
+    "samples": 82332
+   },
+   "reduced_hybrid": {
+    "precision": 0.926904518882806,
+    "recall": 0.8814303361863585,
+    "f1": 0.90359565807327,
+    "false_positive_rate": 0.08516216216216216,
+    "roc_auc": 0.967654365331095,
+    "pr_auc": 0.9756233742596306,
+    "samples": 82332
+   }
+  },
+  "unseen_metrics": {
+   "baseline_logistic": {
+    "precision": 0.520180250783699,
+    "recall": 0.15070670375205766,
+    "f1": 0.23370450244267418,
+    "false_positive_rate": 0.08684705131387638,
+    "roc_auc": 0.6336046092495303,
+    "pr_auc": 0.4753181028787875,
+    "samples": 45816
+   },
+   "supervised": {
+    "precision": 0.7899227202472953,
+    "recall": 0.7252653686779815,
+    "f1": 0.7562144886363636,
+    "false_positive_rate": 0.12050072697613391,
+    "roc_auc": 0.913753489024375,
+    "pr_auc": 0.8753726508801424,
+    "samples": 45816
+   },
+   "anomaly_only": {
+    "precision": 0.5093932861102556,
+    "recall": 0.0938865868195493,
+    "f1": 0.1585506134969325,
+    "false_positive_rate": 0.05649136494201922,
+    "roc_auc": 0.6106015576259567,
+    "pr_auc": 0.4613124966220617,
+    "samples": 45816
+   },
+   "reduced_hybrid": {
+    "precision": 0.8192329563404309,
+    "recall": 0.7359936425043991,
+    "f1": 0.7753857194115537,
+    "false_positive_rate": 0.10145749849285436,
+    "roc_auc": 0.9208691807042371,
+    "pr_auc": 0.8829564126591264,
+    "samples": 45816
+   }
+  },
+  "macro_f1": 0.45833152930356363,
+  "weighted_f1": 0.7178265450006882,
+  "open_set": {
+   "withheld_families": [
+    "analysis",
+    "backdoor",
+    "shellcode",
+    "worms"
+   ],
+   "withheld_family_test_rows": {
+    "rows": 1682,
+    "attributed_correct_type": 0.0,
+    "attributed_wrong_type": 0.0624256837098692,
+    "withheld_outside_class_support": 0.0,
+    "withheld_low_confidence": 0.9143876337693222,
+    "predicted_normal": 0.02318668252080856,
+    "ablation_without_support_wrong_type": 0.0624256837098692,
+    "ablation_without_support_correct_type": 0.0
+   },
+   "known_attack_family_test_rows": {
+    "rows": 43650,
+    "attributed_correct_type": 0.6414432989690722,
+    "attributed_wrong_type": 0.01709049255441008,
+    "withheld_outside_class_support": 0.00029782359679266895,
+    "withheld_low_confidence": 0.3335624284077892,
+    "predicted_normal": 0.007605956471935854,
+    "ablation_without_support_wrong_type": 0.01711340206185567,
+    "ablation_without_support_correct_type": 0.6417182130584193
+   },
+   "benign_test_rows": {
+    "rows": 37000,
+    "attributed_correct_type": 0.0,
+    "attributed_wrong_type": 0.1503783783783784,
+    "withheld_outside_class_support": 0.00045945945945945947,
+    "withheld_low_confidence": 0.243,
+    "predicted_normal": 0.6061621621621621,
+    "ablation_without_support_wrong_type": 0.15083783783783783,
+    "ablation_without_support_correct_type": 0.0
+   }
+  }
+ },
+ "iot23": {
+  "corpus": {
+   "CTU-Honeypot-Capture-4-1": {
+    "records": 452,
+    "represented": 452,
+    "labels": {
+     "normal": 452
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 201,
+    "isolated_beyond_tolerance": 8,
+    "sha256": "aebe40ea0e03b120265a5c7bc140dd9b0d3fe2fce65559e84776b7dd5360e71e"
+   },
+   "CTU-Honeypot-Capture-5-1": {
+    "records": 1374,
+    "represented": 1374,
+    "labels": {
+     "normal": 1374
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 657,
+    "isolated_beyond_tolerance": 44,
+    "sha256": "f36db06e7d6ba7364e932a5b003f75835e004b320d70019e8a2f0ba8685d9262"
+   },
+   "CTU-IoT-Malware-Capture-1-1": {
+    "records": 1008748,
+    "represented": 1008748,
+    "labels": {
+     "scan": 539465,
+     "normal": 469275,
+     "command_and_control": 8
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 435692,
+    "isolated_beyond_tolerance": 364,
+    "sha256": "953e8c27a9b2fcfc2776aa136baf9249e6dde4cf752b9192ac7ca0e63b86e232"
+   },
+   "CTU-IoT-Malware-Capture-3-1": {
+    "records": 156103,
+    "represented": 156103,
+    "labels": {
+     "scan": 145597,
+     "normal": 4536,
+     "command_and_control": 8,
+     "attack_attempt": 5962
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 8905,
+    "isolated_beyond_tolerance": 105,
+    "sha256": "9851009bbca03e15089fa1a356dd4b5eee4a98161a51703626058a0b507f50d0"
+   },
+   "CTU-IoT-Malware-Capture-34-1": {
+    "records": 23145,
+    "represented": 8885,
+    "labels": {
+     "normal": 1923,
+     "command_and_control": 6706,
+     "scan": 122,
+     "dos": 14394
+    },
+    "excluded": {
+     "dos: no measured packets": 14260
+    },
+    "reordered_within_tolerance": 2309,
+    "isolated_beyond_tolerance": 427,
+    "sha256": "d69e49b2aae8c1bd33286936531658202dec47d989f0439bad3f8be180467a6e"
+   },
+   "CTU-IoT-Malware-Capture-42-1": {
+    "records": 4426,
+    "represented": 4426,
+    "labels": {
+     "file_download": 3,
+     "command_and_control": 3,
+     "normal": 4420
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 2429,
+    "isolated_beyond_tolerance": 2,
+    "sha256": "269fa1b22d9a37e159cf41b81a213a0032d21306f5d39b4c20cb0d211b04e8aa"
+   },
+   "CTU-IoT-Malware-Capture-44-1": {
+    "records": 237,
+    "represented": 237,
+    "labels": {
+     "command_and_control": 25,
+     "normal": 211,
+     "dos": 1
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 14,
+    "isolated_beyond_tolerance": 2,
+    "sha256": "12cd99bcda78140dd5f31cf3d786642f150e42e0ebc3599190f35314e406f71f"
+   },
+   "CTU-IoT-Malware-Capture-8-1": {
+    "records": 10403,
+    "represented": 10403,
+    "labels": {
+     "normal": 2181,
+     "command_and_control": 8222
+    },
+    "excluded": {},
+    "reordered_within_tolerance": 2069,
+    "isolated_beyond_tolerance": 0,
+    "sha256": "4877ca8f0f01902fbd18d28b7d06cb3d0be082355b7f2c8862c9deef1782eb8a"
+   }
+  },
+  "protocol": {
+   "held_out_captures": [
+    "CTU-IoT-Malware-Capture-8-1",
+    "CTU-Honeypot-Capture-5-1"
+   ],
+   "withheld_classes": [
+    "attack_attempt"
+   ],
+   "behaviour_reordering_tolerance_seconds": 300.0,
+   "blocks_per_capture": 20,
+   "boundary_purge_seconds": 60,
+   "caps_per_capture_label": {
+    "train": 15000,
+    "calibration": 3000,
+    "fusion": 3000,
+    "tuning": 3000,
+    "test": null
+   },
+   "threshold_selection": "tuning partition only (FPR budget 0.05)",
+   "fixed_before_results": true,
+   "corpus_cache_used": true
+  },
+  "warning": "IoT-23 is a set of 2018-2019 lab captures of a few IoT devices and malware samples on one research network. These measurements do not establish performance on other networks. Temporal-block tests share hosts and capture periods with training; leave-capture-out is the stronger generalization evidence.",
+  "dataset": {
+   "name": "IoT-23",
+   "source": "https://www.stratosphereips.org/datasets-iot23",
+   "files": "https://mcfp.felk.cvut.cz/publicDatasets/IoT-23-Dataset/IndividualScenarios/",
+   "citation": "S. Garcia, A. Parmisano and M. J. Erquiaga, IoT-23: A labeled dataset with malicious and benign IoT network traffic, Stratosphere Laboratory, 2020"
+  },
+  "experiments": {
+   "A_temporal_blocks": {
+    "partitions": {
+     "train": {
+      "normal": 21453,
+      "command_and_control": 9075,
+      "scan": 30000,
+      "attack_attempt": 2809,
+      "dos": 135
+     },
+     "calibration": {
+      "normal": 3553,
+      "scan": 5209,
+      "attack_attempt": 58,
+      "command_and_control": 1722
+     },
+     "fusion": {
+      "normal": 4085,
+      "scan": 6000,
+      "attack_attempt": 85,
+      "command_and_control": 795
+     },
+     "tuning": {
+      "normal": 3443,
+      "command_and_control": 817,
+      "scan": 6000,
+      "attack_attempt": 192
+     },
+     "test": {
+      "normal": 43951,
+      "command_and_control": 804,
+      "scan": 61611,
+      "attack_attempt": 940
+     }
+    },
+    "seen": 100170,
+    "unseen": 7136,
+    "coverage_gaps": {
+     "calibration": [
+      "dos"
+     ],
+     "fusion": [
+      "dos"
+     ],
+     "tuning": [
+      "dos"
+     ]
+    },
+    "excluded_rare": {
+     "file_download": 3
+    },
+    "binary": {
+     "precision": 0.9951036500063589,
+     "recall": 0.9880198879330755,
+     "f1": 0.9915491172906485,
+     "false_positive_rate": 0.007007804145525699,
+     "roc_auc": 0.998830823754712,
+     "pr_auc": 0.9983170041246929,
+     "samples": 107306
+    },
+    "confusion": {
+     "tn": 43643,
+     "fp": 308,
+     "fn": 759,
+     "tp": 62596
+    },
+    "unseen_binary": {
+     "precision": 0.8767693588676103,
+     "recall": 0.7402460456942004,
+     "f1": 0.8027444253859348,
+     "false_positive_rate": 0.0689815893731065,
+     "roc_auc": 0.9129505537195397,
+     "pr_auc": 0.9058445143225484,
+     "samples": 7136
+    },
+    "single_layers": {
+     "supervised": {
+      "f1": 0.9904783117100061,
+      "false_positive_rate": 0.0022752610862096425
+     },
+     "anomaly_only": {
+      "f1": 0.7969783875986429,
+      "false_positive_rate": 0.018770903961229553
+     },
+     "temporal_only": {
+      "f1": 0.8281359401087952,
+      "false_positive_rate": 0.04366226024436304
+     }
+    },
+    "fusion_variants": {
+     "full": {
+      "f1": 0.9915491172906485,
+      "false_positive_rate": 0.007007804145525699
+     },
+     "hybrid": {
+      "f1": 0.9904864933659996,
+      "false_positive_rate": 0.002298013697071739
+     },
+     "without_anomaly": {
+      "f1": 0.9917426035737188,
+      "false_positive_rate": 0.007326340697595049
+     },
+     "without_temporal": {
+      "f1": 0.9903340519813204,
+      "false_positive_rate": 0.0023207663079338353
+     },
+     "without_profile": {
+      "f1": 0.9915255579667676,
+      "false_positive_rate": 0.007076061978111989
+     }
+    },
+    "per_capture": {
+     "CTU-Honeypot-Capture-4-1": {
+      "rows": 24,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-Honeypot-Capture-5-1": {
+      "rows": 5,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-IoT-Malware-Capture-1-1": {
+      "rows": 92135,
+      "attack_rows": 49044,
+      "detection_rate": 0.9845444906614469,
+      "false_positive_rate": 0.006544289990949386
+     },
+     "CTU-IoT-Malware-Capture-3-1": {
+      "rows": 13909,
+      "attack_rows": 13509,
+      "detection_rate": 0.9999259752757421,
+      "false_positive_rate": 0.065
+     },
+     "CTU-IoT-Malware-Capture-42-1": {
+      "rows": 209,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-IoT-Malware-Capture-44-1": {
+      "rows": 17,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-IoT-Malware-Capture-8-1": {
+      "rows": 1007,
+      "attack_rows": 802,
+      "detection_rate": 1.0,
+      "false_positive_rate": 0.0
+     }
+    },
+    "decisions": {
+     "benign_flows": 1773,
+     "attack_flows": 3559,
+     "benign_normal_rate": 0.9210377890580936,
+     "benign_abstention_rate": 0.047377326565143825,
+     "benign_alert_rate": 0.03158488437676255,
+     "benign_malicious_rate": 0.007896221094190638,
+     "attack_flagged_rate": 0.9983141331834785,
+     "attack_malicious_rate": 0.9921326215228997,
+     "attack_correct_attribution_rate": 0.9924135993256533,
+     "attack_wrong_attribution_rate": 0.0
+    },
+    "decision_counts": {
+     "attack_attempt": {
+      "normal": 0,
+      "suspicious": 1,
+      "anomalous": 2,
+      "malicious": 933,
+      "unknown": 0
+     },
+     "command_and_control": {
+      "normal": 2,
+      "suspicious": 0,
+      "anomalous": 0,
+      "malicious": 802,
+      "unknown": 0
+     },
+     "normal": {
+      "normal": 1633,
+      "suspicious": 0,
+      "anomalous": 42,
+      "malicious": 14,
+      "unknown": 84
+     },
+     "scan": {
+      "normal": 4,
+      "suspicious": 0,
+      "anomalous": 15,
+      "malicious": 1796,
+      "unknown": 4
+     }
+    },
+    "attributed_as": {
+     "attack_attempt": {
+      "attack_attempt": 934,
+      "unattributed": 2
+     },
+     "command_and_control": {
+      "normal": 2,
+      "command_and_control": 802
+     },
+     "normal": {
+      "normal": 1633,
+      "unattributed": 42,
+      "uncertain": 84,
+      "scan": 8,
+      "attack_attempt": 6
+     },
+     "scan": {
+      "scan": 1796,
+      "unattributed": 15,
+      "normal": 4,
+      "uncertain": 4
+     }
+    },
+    "latency": {
+     "p50": 7.887200001277961,
+     "p95": 9.200609998515574,
+     "samples": 5332
+    },
+    "fit_seconds": 21.6815695999976,
+    "ablation": null
+   },
+   "B_open_set_withheld_attack_attempt": {
+    "partitions": {
+     "train": {
+      "normal": 21453,
+      "command_and_control": 9075,
+      "scan": 30000,
+      "dos": 135
+     },
+     "calibration": {
+      "normal": 3553,
+      "scan": 5209,
+      "command_and_control": 1722
+     },
+     "fusion": {
+      "normal": 4085,
+      "scan": 6000,
+      "command_and_control": 795
+     },
+     "tuning": {
+      "normal": 3443,
+      "command_and_control": 817,
+      "scan": 6000
+     },
+     "test": {
+      "normal": 43951,
+      "command_and_control": 804,
+      "scan": 61611,
+      "attack_attempt": 940
+     }
+    },
+    "seen": 100170,
+    "unseen": 7136,
+    "coverage_gaps": {
+     "calibration": [
+      "dos"
+     ],
+     "fusion": [
+      "dos"
+     ],
+     "tuning": [
+      "dos"
+     ]
+    },
+    "excluded_rare": {
+     "file_download": 3
+    },
+    "binary": {
+     "precision": 0.9987453561884899,
+     "recall": 0.9674848078289007,
+     "f1": 0.9828665806120568,
+     "false_positive_rate": 0.0017519510363814249,
+     "roc_auc": 0.9990198347263347,
+     "pr_auc": 0.999250964092749,
+     "samples": 107306
+    },
+    "confusion": {
+     "tn": 43874,
+     "fp": 77,
+     "fn": 2060,
+     "tp": 61295
+    },
+    "unseen_binary": {
+     "precision": 0.9279569892473118,
+     "recall": 0.3033391915641476,
+     "f1": 0.4572185430463576,
+     "false_positive_rate": 0.015614075972966674,
+     "roc_auc": 0.8682362929890861,
+     "pr_auc": 0.8187857697838993,
+     "samples": 7136
+    },
+    "single_layers": {
+     "supervised": {
+      "f1": 0.983046228086348,
+      "false_positive_rate": 0.0017747036472435212
+     },
+     "anomaly_only": {
+      "f1": 0.7969783875986429,
+      "false_positive_rate": 0.018770903961229553
+     },
+     "temporal_only": {
+      "f1": 0.8548229548229548,
+      "false_positive_rate": 0.05228549976109759
+     }
+    },
+    "fusion_variants": {
+     "full": {
+      "f1": 0.9828665806120568,
+      "false_positive_rate": 0.0017519510363814249
+     },
+     "hybrid": {
+      "f1": 0.9830625315623672,
+      "false_positive_rate": 0.0017747036472435212
+     },
+     "without_anomaly": {
+      "f1": 0.98243447014662,
+      "false_positive_rate": 0.0017747036472435212
+     },
+     "without_temporal": {
+      "f1": 0.9831524133787303,
+      "false_positive_rate": 0.0024800345839685106
+     },
+     "without_profile": {
+      "f1": 0.9830948659372369,
+      "false_positive_rate": 0.0017519510363814249
+     }
+    },
+    "per_capture": {
+     "CTU-Honeypot-Capture-4-1": {
+      "rows": 24,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-Honeypot-Capture-5-1": {
+      "rows": 5,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-IoT-Malware-Capture-1-1": {
+      "rows": 92135,
+      "attack_rows": 49044,
+      "detection_rate": 0.9772245330723432,
+      "false_positive_rate": 0.0016940892529762595
+     },
+     "CTU-IoT-Malware-Capture-3-1": {
+      "rows": 13909,
+      "attack_rows": 13509,
+      "detection_rate": 0.9301946850247983,
+      "false_positive_rate": 0.01
+     },
+     "CTU-IoT-Malware-Capture-42-1": {
+      "rows": 209,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-IoT-Malware-Capture-44-1": {
+      "rows": 17,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.0
+     },
+     "CTU-IoT-Malware-Capture-8-1": {
+      "rows": 1007,
+      "attack_rows": 802,
+      "detection_rate": 1.0,
+      "false_positive_rate": 0.0
+     }
+    },
+    "decisions": {
+     "benign_flows": 1773,
+     "attack_flows": 3559,
+     "benign_normal_rate": 0.9199097574732092,
+     "benign_abstention_rate": 0.048505358150028204,
+     "benign_alert_rate": 0.03158488437676255,
+     "benign_malicious_rate": 0.003948110547095319,
+     "attack_flagged_rate": 0.9983141331834785,
+     "attack_malicious_rate": 0.7302613093565609,
+     "attack_correct_attribution_rate": 0.7302613093565609,
+     "attack_wrong_attribution_rate": 0.0
+    },
+    "decision_counts": {
+     "attack_attempt": {
+      "normal": 1,
+      "suspicious": 0,
+      "anomalous": 935,
+      "malicious": 0,
+      "unknown": 0
+     },
+     "command_and_control": {
+      "normal": 2,
+      "suspicious": 0,
+      "anomalous": 0,
+      "malicious": 802,
+      "unknown": 0
+     },
+     "normal": {
+      "normal": 1631,
+      "suspicious": 1,
+      "anomalous": 48,
+      "malicious": 7,
+      "unknown": 86
+     },
+     "scan": {
+      "normal": 3,
+      "suspicious": 0,
+      "anomalous": 19,
+      "malicious": 1797,
+      "unknown": 0
+     }
+    },
+    "attributed_as": {
+     "attack_attempt": {
+      "unattributed": 935,
+      "normal": 1
+     },
+     "command_and_control": {
+      "normal": 2,
+      "command_and_control": 802
+     },
+     "normal": {
+      "normal": 1631,
+      "unattributed": 48,
+      "uncertain": 86,
+      "scan": 8
+     },
+     "scan": {
+      "scan": 1797,
+      "unattributed": 19,
+      "normal": 3
+     }
+    },
+    "latency": {
+     "p50": 7.333500005188398,
+     "p95": 8.51755999792658,
+     "samples": 5332
+    },
+    "fit_seconds": 19.63175069999852,
+    "ablation": {
+     "attack_attempt": {
+      "normal": 0,
+      "suspicious": 0,
+      "anomalous": 935,
+      "malicious": 0,
+      "unknown": 1
+     },
+     "command_and_control": {
+      "normal": 2,
+      "suspicious": 0,
+      "anomalous": 0,
+      "malicious": 802,
+      "unknown": 0
+     },
+     "normal": {
+      "normal": 1623,
+      "suspicious": 1,
+      "anomalous": 56,
+      "malicious": 7,
+      "unknown": 86
+     },
+     "scan": {
+      "normal": 3,
+      "suspicious": 0,
+      "anomalous": 16,
+      "malicious": 1797,
+      "unknown": 3
+     }
+    }
+   },
+   "C_leave_capture_out": {
+    "partitions": {
+     "train": {
+      "normal": 20858,
+      "command_and_control": 4494,
+      "scan": 30000,
+      "attack_attempt": 3916,
+      "dos": 135
+     },
+     "calibration": {
+      "normal": 3260,
+      "scan": 5209,
+      "attack_attempt": 58,
+      "command_and_control": 908
+     },
+     "fusion": {
+      "normal": 3789,
+      "scan": 6000,
+      "attack_attempt": 85
+     },
+     "tuning": {
+      "normal": 3155,
+      "command_and_control": 1,
+      "scan": 6000,
+      "attack_attempt": 192
+     },
+     "test": {
+      "normal": 3555,
+      "command_and_control": 8222
+     }
+    },
+    "seen": 1785,
+    "unseen": 9992,
+    "coverage_gaps": {
+     "calibration": [
+      "dos"
+     ],
+     "fusion": [
+      "command_and_control",
+      "dos"
+     ],
+     "tuning": [
+      "dos"
+     ]
+    },
+    "excluded_rare": {
+     "file_download": 3
+    },
+    "binary": {
+     "precision": 0.9574938861069058,
+     "recall": 1.0,
+     "f1": 0.9782854423225653,
+     "false_positive_rate": 0.10267229254571027,
+     "roc_auc": 0.9055959774485864,
+     "pr_auc": 0.8891453959263813,
+     "samples": 11777
+    },
+    "confusion": {
+     "tn": 3190,
+     "fp": 365,
+     "fn": 0,
+     "tp": 8222
+    },
+    "unseen_binary": {
+     "precision": 0.9574938861069058,
+     "recall": 1.0,
+     "f1": 0.9782854423225653,
+     "false_positive_rate": 0.2062146892655367,
+     "roc_auc": 0.8103919208077544,
+     "pr_auc": 0.8891453959263814,
+     "samples": 9992
+    },
+    "single_layers": {
+     "supervised": {
+      "f1": 0.0,
+      "false_positive_rate": 0.10267229254571027
+     },
+     "anomaly_only": {
+      "f1": 0.948929540077327,
+      "false_positive_rate": 0.2489451476793249
+     },
+     "temporal_only": {
+      "f1": 0.00024301336573511544,
+      "false_positive_rate": 0.001969057665260197
+     }
+    },
+    "fusion_variants": {
+     "full": {
+      "f1": 0.9782854423225653,
+      "false_positive_rate": 0.10267229254571027
+     },
+     "hybrid": {
+      "f1": 0.9781108731858197,
+      "false_positive_rate": 0.10351617440225035
+     },
+     "without_anomaly": {
+      "f1": 0.978227245687091,
+      "false_positive_rate": 0.1029535864978903
+     },
+     "without_temporal": {
+      "f1": 0.9782828583328375,
+      "false_positive_rate": 0.10239099859353024
+     },
+     "without_profile": {
+      "f1": 0.5285347043701799,
+      "false_positive_rate": 0.10239099859353024
+     }
+    },
+    "per_capture": {
+     "CTU-Honeypot-Capture-5-1": {
+      "rows": 1374,
+      "attack_rows": 0,
+      "detection_rate": null,
+      "false_positive_rate": 0.26564774381368267
+     },
+     "CTU-IoT-Malware-Capture-8-1": {
+      "rows": 10403,
+      "attack_rows": 8222,
+      "detection_rate": 1.0,
+      "false_positive_rate": 0.0
+     }
+    },
+    "decisions": {
+     "benign_flows": 2000,
+     "attack_flows": 1000,
+     "benign_normal_rate": 0.454,
+     "benign_abstention_rate": 0.2375,
+     "benign_alert_rate": 0.3085,
+     "benign_malicious_rate": 0.0,
+     "attack_flagged_rate": 1.0,
+     "attack_malicious_rate": 0.252,
+     "attack_correct_attribution_rate": 0.0,
+     "attack_wrong_attribution_rate": 1.0
+    },
+    "decision_counts": {
+     "command_and_control": {
+      "normal": 0,
+      "suspicious": 748,
+      "anomalous": 0,
+      "malicious": 252,
+      "unknown": 0
+     },
+     "normal": {
+      "normal": 908,
+      "suspicious": 0,
+      "anomalous": 617,
+      "malicious": 0,
+      "unknown": 475
+     }
+    },
+    "attributed_as": {
+     "command_and_control": {
+      "scan": 1000
+     },
+     "normal": {
+      "unattributed": 617,
+      "normal": 908,
+      "uncertain": 475
+     }
+    },
+    "latency": {
+     "p50": 7.115250002243556,
+     "p95": 8.006440003373426,
+     "samples": 3000
+    },
+    "fit_seconds": 20.199200299997756,
+    "ablation": null
+   }
+  },
+  "prefix_C": {
+   "commit": "fc48844",
+   "benign_malicious": 260,
+   "benign_dos_label": 260
+  },
+  "feature_importance_A": [
+   {
+    "feature": "log_destination_port",
+    "importance": 0.4545812307318573,
+    "method": "training impurity (global)"
+   },
+   {
+    "feature": "log_reverse_bytes",
+    "importance": 0.21977407931917595,
+    "method": "training impurity (global)"
+   },
+   {
+    "feature": "tcp",
+    "importance": 0.18455750809164365,
+    "method": "training impurity (global)"
+   },
+   {
+    "feature": "log_packet_rate",
+    "importance": 0.0809443778028917,
+    "method": "training impurity (global)"
+   },
+   {
+    "feature": "log_mean_packet_size",
+    "importance": 0.03423767205197032,
+    "method": "training impurity (global)"
+   }
+  ]
+ },
+ "lateness": {
+  "CTU-IoT-Malware-Capture-44-1": {
+   "records": 237,
+   "late": 0.06751054852320675,
+   "beyond_300s": 0.008438818565400843
+  },
+  "CTU-Honeypot-Capture-4-1": {
+   "records": 452,
+   "late": 0.46238938053097345,
+   "beyond_300s": 0.017699115044247787
+  },
+  "CTU-Honeypot-Capture-5-1": {
+   "records": 1374,
+   "late": 0.5101892285298398,
+   "beyond_300s": 0.03202328966521106
+  },
+  "CTU-IoT-Malware-Capture-42-1": {
+   "records": 4426,
+   "late": 0.5492544057840036,
+   "beyond_300s": 0.00045187528242205153
+  },
+  "CTU-IoT-Malware-Capture-8-1": {
+   "records": 10403,
+   "late": 0.19888493703739307,
+   "beyond_300s": 0.0
+  },
+  "CTU-IoT-Malware-Capture-34-1": {
+   "records": 23145,
+   "late": 0.12266148196154678,
+   "beyond_300s": 0.018492114927630157
+  },
+  "CTU-IoT-Malware-Capture-3-1": {
+   "records": 156103,
+   "late": 0.05771830137793636,
+   "beyond_300s": 0.0006726328129504237
+  },
+  "CTU-IoT-Malware-Capture-1-1": {
+   "records": 1008748,
+   "late": 0.4322744629976962,
+   "beyond_300s": 0.00036084334244033196
+  }
+ },
+ "reordering": {
+  "CTU-IoT-Malware-Capture-34-1": {
+   "0": {
+    "available": 0.6900393922341024,
+    "isolated": 0.3079347214406303,
+    "flows": 8885
+   },
+   "300": {
+    "available": 0.9499155880697805,
+    "isolated": 0.04805852560495217,
+    "flows": 8885
+   }
+  },
+  "CTU-Honeypot-Capture-5-1": {
+   "0": {
+    "available": 0.35807860262008734,
+    "isolated": 0.5101892285298398,
+    "flows": 1374
+   },
+   "300": {
+    "available": 0.8377001455604076,
+    "isolated": 0.03202328966521106,
+    "flows": 1374
+   }
+  }
+ },
+ "live_replay": {
+  "after_fix": {
+   "counts": {
+    "honeypot-5-1|normal": {
+     "anomalous": 845,
+     "normal": 339,
+     "unknown": 190
+    },
+    "capture-8-1|normal": {
+     "normal": 1463,
+     "unknown": 716,
+     "anomalous": 2
+    },
+    "capture-8-1|command_and_control": {
+     "malicious": 2057,
+     "suspicious": 6165
+    }
+   },
+   "labels": {
+    "honeypot-5-1|normal": {
+     "unattributed": 845,
+     "normal": 339,
+     "uncertain": 190
+    },
+    "capture-8-1|normal": {
+     "normal": 1463,
+     "uncertain": 716,
+     "unattributed": 2
+    },
+    "capture-8-1|command_and_control": {
+     "scan": 8222
+    }
+   },
+   "events": 11777,
+   "span_8_1_s": 122.26776099205017,
+   "inference_total_s": 89.411713,
+   "ms_per_event": {
+    "start": 10.98307490348816,
+    "middle": 11.077059507369995,
+    "end": 11.470414400100708
+   },
+   "mean_inference_ms": 8.59480082668461,
+   "largest_incident": 8879
+  },
+  "before_fix": {
+   "counts": {
+    "honeypot-5-1|normal": {
+     "anomalous": 845,
+     "normal": 339,
+     "unknown": 190
+    },
+    "capture-8-1|normal": {
+     "normal": 1463,
+     "unknown": 716,
+     "anomalous": 2
+    },
+    "capture-8-1|command_and_control": {
+     "malicious": 2057,
+     "suspicious": 6165
+    }
+   },
+   "labels": {
+    "honeypot-5-1|normal": {
+     "unattributed": 845,
+     "normal": 339,
+     "uncertain": 190
+    },
+    "capture-8-1|normal": {
+     "normal": 1463,
+     "uncertain": 716,
+     "unattributed": 2
+    },
+    "capture-8-1|command_and_control": {
+     "scan": 8222
+    }
+   },
+   "events": 11777,
+   "span_8_1_s": 465.43927001953125,
+   "inference_total_s": 90.862045,
+   "ms_per_event": {
+    "start": 11.380590200424194,
+    "middle": 46.10940933227539,
+    "end": 81.92816972732544
+   },
+   "mean_inference_ms": 8.734215610881476,
+   "largest_incident": 8879
+  }
+ },
+ "verification": {
+  "checks": 88,
+  "failed": 0,
+  "seconds": 52.6,
+  "stages": [
+   "1 model artifact",
+   "2 startup",
+   "3 perimeter/auth",
+   "4 telemetry validation",
+   "5 single flow layers",
+   "6 behaviour+detection",
+   "7 novel behaviour",
+   "8 batch ingestion",
+   "9 synthetic replay",
+   "10 CLI collectors",
+   "11 storage+incidents",
+   "12 risk+explanations",
+   "13 response policy",
+   "14 audit trail",
+   "15 monitoring+models",
+   "16 dashboard",
+   "17 restart persistence",
+   "18 token RBAC",
+   "19 fail closed"
+  ]
+ },
+ "tests": {
+  "collected": 136,
+  "files": [
+   "tests/test_api_security.py",
+   "tests/test_behavior_reordering.py",
+   "tests/test_collectors.py",
+   "tests/test_corpus.py",
+   "tests/test_detection.py",
+   "tests/test_drift_isolation.py",
+   "tests/test_ml.py",
+   "tests/test_pipeline_e2e.py",
+   "tests/test_response_safety.py"
+  ]
+ },
+ "git": [
+  "8e16a5d Fix quadratic incident storage; publish IoT-23 results and live replay",
+  "fc48844 Never attribute an attack class whose support cannot be verified",
+  "26670a0 Train and evaluate the live pipeline on real IoT-23 Zeek traffic",
+  "01077bc Harden pipeline integrity, drift isolation and model lineage",
+  "7cb6dc1 AegisWeave ML-NIDS: verified working baseline (model v1.1.0)"
+ ],
+ "environment": {
+  "python": "3.12.10",
+  "platform": "Windows-11-10.0.26200-SP0"
+ }
+}

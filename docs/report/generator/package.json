@@ -1,0 +1,13 @@
+{
+  "name": "aegisweave-report-generator",
+  "private": true,
+  "description": "Builds the AegisWeave project report (Word and web) from measured project results",
+  "scripts": {
+    "data": "python extract.py",
+    "docx": "node build_docx.js",
+    "html": "node build_html.js"
+  },
+  "dependencies": {
+    "docx": "9.7.1"
+  }
+}

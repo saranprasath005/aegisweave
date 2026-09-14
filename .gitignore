@@ -11,3 +11,5 @@ node_modules/
 .coverage
 htmlcov/
 .claude/
+docs/report/generator/pages/
+docs/report/generator/raw_report.docx
