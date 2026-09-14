@@ -105,6 +105,11 @@ def test_supported_confident_attack_is_attributed():
     assert attribute(result, "malicious", DetectionConfig())["label"] == "dos"
 
 
+def test_legacy_artifact_does_not_invent_a_class_support_measurement():
+    statement = attribute(evidence(), "malicious", DetectionConfig())["statement"]
+    assert "unavailable" in statement and "within training support" not in statement
+
+
 def test_unsupported_class_is_never_malicious_even_without_novelty():
     result = supported(1.0, anomaly={"score": .1})
     assert decide(result, DetectionConfig()) == "suspicious"
@@ -196,6 +201,8 @@ def test_successful_inference_traces_model_and_measured_latency():
     assert result["fusion"]["decision"] == "malicious"
     assert result["telemetry"]["source"] == "10.0.0.2"
     assert "context" in result["behavior"]
+    assert result["fusion"]["decision_config"]["malicious_threshold"] == .78
+    assert result["risk"]["severity_thresholds"]["critical_threshold"] == 85
 
 
 def test_drift_uses_separate_bounded_windows_and_never_retrains():

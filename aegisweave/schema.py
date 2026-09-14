@@ -31,6 +31,7 @@ class Flow(BaseModel):
     sensor_id: str = Field(default="local", min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_.:-]+$")
     simulated: bool = Field(default=False, strict=True)
     missing_features: list[Literal["syn_ratio", "failed", "reverse_packets", "reverse_bytes"]] = Field(default_factory=list, max_length=4)
+    measurement_assumptions: list[Literal["single_tcp_packet_zero_payload", "fixed_ip_transport_headers"]] = Field(default_factory=list, max_length=2)
 
     @model_validator(mode="before")
     @classmethod

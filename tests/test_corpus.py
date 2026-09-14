@@ -92,6 +92,8 @@ def test_split_guarantees_and_real_data_provenance(tmp_path):
     assert split.report["excluded_rare_classes"] == {}
     assert split.report["captures"]["CTU-Fixture-Capture-1-1"]["excluded_unrepresentable"] == {"dos: no measured packets": 13}
     assert len(split.unseen_test) == len(split.parts["test"].labels)
+    assert split.report["context_isolation"]["test_captures_disjoint_from_fitting"] is False
+    assert split.report["context_isolation"]["all_fitting_partitions_have_independent_context"] is False
     assert split.report["test_rows_unseen"] == int(split.unseen_test.sum())
     assert set(split.decision_sample.labels) == {"normal", "scan", "attack_attempt"}
     assert len(split.decision_sample.flows) == len(split.decision_sample.labels) <= 90

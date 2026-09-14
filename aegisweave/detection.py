@@ -121,7 +121,8 @@ def attribute(result: dict, decision: str, config: DetectionConfig) -> dict:
         status, label, statement = "not_applicable", "normal", "No corroborated attack evidence; no attack type is attributed."
     elif decision == "malicious":
         status, label = "attributed", model_class
-        statement = f"Known attack pattern '{model_class}': fused score {s['score']:.3f}, class confidence {s['confidence']:.3f}, within training support{support_text}."
+        support_statement = f"within training support{support_text}" if s["support"] is not None else "class-support evidence is unavailable in this legacy artifact"
+        statement = f"Known attack pattern '{model_class}': fused score {s['score']:.3f}, class confidence {s['confidence']:.3f}, {support_statement}."
     elif decision == "anomalous":
         status, label = "withheld_novel", "unattributed"
         if s["unverifiable"]:
@@ -190,9 +191,9 @@ def assess_risk(result: dict, asset_importance: float = 0.5, config: RiskConfig 
     return {"score": score, "severity": severity, "reasoning": [
         f"{key.replace('_', ' ')} contributed {100 * value:.1f} risk points"
         for key, value in components.items() if value > 0.01
-    ] + ([f"Risk capped at {cap} for {'an' if decision[0] in 'aeiou' else 'a'} {decision} decision"] if decision != "malicious" else []),
+    ] + ([f"Risk cap is {cap} for {'an' if decision[0] in 'aeiou' else 'a'} {decision} decision"] if decision != "malicious" else []),
         "components": {k: round(v * 100, 2) for k, v in components.items()},
-        "recommended_response": response, "asset_importance": bounded(asset_importance)}
+        "recommended_response": response, "asset_importance": bounded(asset_importance), "severity_thresholds": asdict(config)}
 
 
 class DriftMonitor:
@@ -322,12 +323,19 @@ class DetectionEngine:
                         raise ValueError(f"Model result missing {key}")
                 decision = decide(result, self.config)
                 result["fusion"]["decision"] = decision
+                result["fusion"]["decision_config"] = asdict(self.config)
                 result["anomaly"]["threshold"] = self.config.anomaly_threshold
                 result["anomaly"]["is_anomalous"] = bounded(result["anomaly"].get("score")) >= self.config.anomaly_threshold
                 result["attribution"] = attribute(result, decision, self.config)
                 result["risk"] = assess_risk(result, self.assets.get(flow.destination, .5), self.risk_config)
                 result["behavior"]["context"] = context
                 result["explanation"] = [*result["explanation"], result["attribution"]["statement"]]
+                assumption_evidence = {
+                    "single_tcp_packet_zero_payload": "Collector assumption: an unset payload counter for a single TCP packet was estimated as zero; a one-packet connection can carry data.",
+                    "fixed_ip_transport_headers": "Collector assumption: payload bytes were estimated using fixed IP and transport header sizes; IP options or extension headers can change the actual payload length.",
+                }
+                for assumption in flow.measurement_assumptions:
+                    result["explanation"].insert(-1, assumption_evidence[assumption])
                 elapsed = (time.perf_counter() - start) * 1000
                 event = {**flow.model_dump(mode="json"), **result, "telemetry": flow.model_dump(mode="json"),
                          "inference_ms": round(elapsed, 3)}

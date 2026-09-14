@@ -11,10 +11,12 @@ that **only simulates** actions.
 > labeled Zeek traffic from a 2018–2019 lab network. They transfer poorly to an unseen network (see results).
 > No result here establishes performance on your network. No live containment adapter exists.
 
+Latest engineering findings and validation are recorded in [the continuation review](docs/CONTINUATION_REVIEW.md), including collector estimation assumptions and temporal-partition research limitations.
+
 ## Architecture
 
 ```
-Zeek conn.log (TSV or JSON) ─┐   collectors.py: exact handling of unset fields, bad records skipped and reported
+Zeek conn.log (TSV or JSON) ─┐   collectors.py: unset fields normalized with explicit assumptions; bad records reported
 normalized JSONL ────────────┼─► POST /api/telemetry[/batch]  (pydantic Flow: strict, no labels, no asset priority)
 synthetic replay ────────────┘            │
                                  ▼
@@ -145,7 +147,7 @@ Detection thresholds and asset importance: copy `config/detection.example.json` 
 .venv/Scripts/python -m pytest -p no:cacheprovider
 ```
 
-The run takes about 20 s. **136 tests** cover:
+The run takes about 20 s. **137 tests** cover:
 - schema and injection rejection; decision, attribution and risk rules
 - a real trained model: manifest tamper detection, output contract, identity-field invariance, recomputable explanations,
   missing measurements, split leakage, class-support behaviour, a withheld attack family never given a known type,

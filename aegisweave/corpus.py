@@ -311,4 +311,11 @@ def build_split(captures: list[Capture], protocol: str, *, held_out=(), withheld
     trained_classes = set(parts["train"].labels.tolist())
     report["coverage_gaps"] = {p: sorted(trained_classes - set(parts[p].labels.tolist()) - {"normal"})
                                for p in ("calibration", "fusion", "tuning")}
+    report["context_isolation"] = {
+        "test_captures_disjoint_from_fitting": protocol == "leave_capture_out",
+        "all_fitting_partitions_have_independent_context": False,
+        "behavior_window_seconds": 300,
+        "purge_seconds": gap_seconds,
+        "warning": "Behavior features are constructed causally over each complete capture before partition assignment. Interleaved partitions can share unlabeled history; a boundary purge shorter than the behavior window cannot guarantee context isolation. Whole held-out captures isolate test context, but the internal calibration/fusion partitions still share capture context.",
+    }
     return CorpusSplit(parts, unseen, sample, report)

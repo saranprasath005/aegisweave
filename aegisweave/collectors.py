@@ -30,14 +30,13 @@ def _counter(row: dict, name: str, required: bool = True):
     return value
 
 
-def _payload_bytes(row: dict, direction: str, packets: int, protocol: str, address: str):
+def _payload_bytes(row: dict, direction: str, packets: int, protocol: str, address: str, assumptions: set | None = None):
     """Zeek leaves payload bytes unset for single-packet connections.
 
-    Values are never guessed: zero packets carry zero payload, a single TCP packet
-    without a handshake (SYN/RST probe) carries no sequence-tracked payload, and
-    UDP/ICMP payload is derived exactly from the measured IP length minus fixed
-    IPv4/IPv6 and UDP/ICMP headers (IP options, which are rare, would be counted).
-    Anything else is refused rather than invented.
+    Zero packets imply zero payload. Other historical adapter fallbacks are
+    estimates: TCP packets can carry data even without a completed handshake,
+    and IP options/extension headers change UDP/ICMP overhead. These assumptions
+    are disclosed on the normalized event; they are not exact measurements.
     """
     key = f"{direction}_bytes"
     if key in row:
@@ -45,9 +44,13 @@ def _payload_bytes(row: dict, direction: str, packets: int, protocol: str, addre
     if packets == 0:
         return 0
     if protocol == "tcp" and packets == 1:
+        if assumptions is not None:
+            assumptions.add("single_tcp_packet_zero_payload")
         return 0
     ip_bytes = row.get(f"{direction}_ip_bytes")
     if protocol in FIXED_TRANSPORT_HEADER_BYTES and isinstance(ip_bytes, int) and not isinstance(ip_bytes, bool) and ip_bytes >= 0:
+        if assumptions is not None:
+            assumptions.add("fixed_ip_transport_headers")
         overhead = IP_HEADER_BYTES[ipaddress.ip_address(address).version] + FIXED_TRANSPORT_HEADER_BYTES[protocol]
         return max(0, ip_bytes - packets * overhead)
     raise ValueError(f"Zeek {key} is missing (unset) and cannot be derived from measured counters")
@@ -57,12 +60,13 @@ def zeek_to_flow(row: dict, sensor_id: str = "zeek-local") -> Flow:
     """Normalize a Zeek conn record (JSON or TSV-parsed) with explicit missing measurements.
 
     Bytes are transport payload counters (orig_bytes/resp_bytes), never mixed
-    with IP-length counters except for the exact fixed-header derivation above.
+    with IP-length counters except for the explicitly disclosed estimate above.
     orig_pkts and resp_pkts are direction-separated. Zeek's compact history
     string cannot provide a measured SYN packet ratio. Label columns present in
     research logs are ignored: telemetry never carries ground truth.
     """
     missing = ["syn_ratio"]
+    assumptions = set()
     state = row.get("conn_state")
     if state not in {"S0", "REJ", "RSTOS0", "SF", "S1", "S2", "S3"}:
         missing.append("failed")
@@ -83,11 +87,12 @@ def zeek_to_flow(row: dict, sensor_id: str = "zeek-local") -> Flow:
         raise ValueError("Zeek duration is unset for a multi-packet connection")
     reverse_bytes = 0
     if "resp_pkts" in row:
-        reverse_bytes = _payload_bytes(row, "resp", reverse_packets, raw_protocol, row["id.resp_h"])
+        reverse_bytes = _payload_bytes(row, "resp", reverse_packets, raw_protocol, row["id.resp_h"], assumptions)
     elif "resp_bytes" in row:
         reverse_bytes = _counter(row, "resp_bytes")
     if "resp_bytes" not in row and "resp_pkts" not in row:
         missing.append("reverse_bytes")
+    forward_bytes = _payload_bytes(row, "orig", orig_packets, raw_protocol, row["id.orig_h"], assumptions)
     return Flow(
         event_id=str(uuid5(NAMESPACE_URL, f"{sensor_id}/{row['uid']}/{ts}")),
         timestamp=datetime.fromtimestamp(ts, timezone.utc),
@@ -96,10 +101,10 @@ def zeek_to_flow(row: dict, sensor_id: str = "zeek-local") -> Flow:
         destination_port=_counter(row, "id.resp_p", required=False),
         protocol=protocol if protocol in {"TCP", "UDP", "ICMP"} else "OTHER",
         duration=duration, packets=orig_packets,
-        bytes=_payload_bytes(row, "orig", orig_packets, raw_protocol, row["id.orig_h"]),
+        bytes=forward_bytes,
         reverse_packets=reverse_packets, reverse_bytes=reverse_bytes,
         failed=state in {"S0", "REJ", "RSTOS0"}, syn_ratio=0,
-        sensor_id=sensor_id, simulated=False, missing_features=missing,
+        sensor_id=sensor_id, simulated=False, missing_features=missing, measurement_assumptions=sorted(assumptions),
     )
 
 

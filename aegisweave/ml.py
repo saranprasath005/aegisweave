@@ -313,7 +313,7 @@ class ModelBundle:
         strongest = contributions[0] if contributions else None
         if strongest and abs(strongest["attack_log_odds_delta"]) >= .05:
             direction = "raises" if strongest["attack_log_odds_delta"] > 0 else "lowers"
-            explanations.append(f"Most influential measured feature: {strongest['feature']}={strongest['value']:.2f} (benign median {strongest['benign_median']:.2f}) "
+            explanations.append(f"Most influential available input feature: {strongest['feature']}={strongest['value']:.2f} (benign median {strongest['benign_median']:.2f}) "
                                 f"{direction} supervised attack log-odds by {abs(strongest['attack_log_odds_delta']):.2f} versus the benign median; one-feature sensitivity, not causation.")
         elif strongest:
             explanations.append("No single measured feature changes the supervised attack log-odds by 0.05 or more when reset to its benign median; the class decision depends on several features jointly.")

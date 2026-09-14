@@ -83,8 +83,10 @@ def test_zeek_tsv_reader_types_unset_and_iot23_label_quirk(tmp_path):
     assert scan["detailed-label"] == "PartOfAHorizontalPortScan" and dns["tunnel_parents"] == "" and dns["local_orig"] is True
     probe = zeek_to_flow(scan, "iot23")
     assert probe.duration == 0 and probe.bytes == 0 and probe.packets == 1 and probe.failed is True
+    assert probe.measurement_assumptions == ["single_tcp_packet_zero_payload"]
     datagram = zeek_to_flow(dns, "iot23")
-    assert datagram.bytes == 76 - 20 - 8 and datagram.reverse_bytes == 0  # exact UDP payload from IP length
+    assert datagram.bytes == 76 - 20 - 8 and datagram.reverse_bytes == 0
+    assert datagram.measurement_assumptions == ["fixed_ip_transport_headers"]
 
 
 @pytest.mark.parametrize("line,match", [
@@ -106,7 +108,7 @@ def test_zeek_tsv_requires_header(tmp_path):
         list(read_zeek_tsv(path))
 
 
-def test_zeek_unset_measurements_are_derived_exactly_or_refused():
+def test_zeek_unset_measurements_disclose_estimation_or_are_refused():
     single = {**zeek(), "orig_pkts": 1, "resp_pkts": 0, "conn_state": "S0"}
     for key in ("duration", "orig_bytes", "resp_bytes"):
         single.pop(key)

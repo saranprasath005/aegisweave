@@ -247,7 +247,10 @@ def main() -> int:
         check(stage, "Zeek TSV replayed in batches; packetless record skipped, not fatal",
               replay.returncode == 0 and summary.get("accepted") == 29 and summary.get("rejected") == 1, summary or replay.stderr[-300:])
         probe = api.get("/api/events", params={"search": "10.203.0.7", "limit": 5}).json()["items"][0]
-        check(stage, "unset single-packet fields normalized exactly", probe["duration"] == 0 and probe["bytes"] == 0 and probe["packets"] == 1)
+        check(stage, "single-packet normalization explicitly discloses payload estimate",
+              probe["duration"] == 0 and probe["bytes"] == 0 and probe["packets"] == 1 and
+              "single_tcp_packet_zero_payload" in probe.get("measurement_assumptions", []) and
+              any("Collector assumption" in text for text in probe["explanation"]))
         rows = [{"ts": 1767225600.0 + i, "uid": f"Cverify{i}", "id.orig_h": "10.202.0.9", "id.resp_h": "172.20.3.3",
                  "id.orig_p": 40000 + i, "id.resp_p": 22, "proto": "tcp", "duration": .3, "orig_pkts": 5, "orig_bytes": 420,
                  "resp_pkts": 3, "resp_bytes": 380, "conn_state": "REJ" if i % 2 else "SF"} for i in range(6)]
