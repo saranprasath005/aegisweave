@@ -36,6 +36,7 @@ def parser():
     replay.add_argument("--url", default="http://127.0.0.1:8765")
     replay.add_argument("--follow", action="store_true", help="Follow appended lines until interrupted")
     replay.add_argument("--interval", type=float, default=0, help="Seconds between submitted flows")
+    replay.add_argument("--simulated", action="store_true", help="Label every input as simulated, for constructed sensor fixtures or exercises")
     export = sub.add_parser("generate-demo", help="Write explicitly simulated normalized JSONL")
     export.add_argument("output", type=Path)
     export.add_argument("--count", default=120, type=int)
@@ -101,8 +102,8 @@ def main():
         uvicorn.run(app, host=args.host, port=args.port, access_log=False, proxy_headers=False)
     elif args.command == "generate-demo":
         from aegisweave.demo import generate_demo
-        if not 1 <= args.count <= 100000:
-            raise SystemExit("count must be between 1 and 100000")
+        if not 1 <= args.count <= 5000:
+            raise SystemExit("count must be between 1 and 5000")
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("w", encoding="utf-8") as handle:
             for flow in generate_demo(count=args.count, seed=args.seed):
@@ -110,7 +111,7 @@ def main():
         print(f"Wrote {args.count} simulated flows to {args.output}")
     elif args.command == "replay":
         from aegisweave.collectors import forward
-        forward(args.file, args.url, args.format, args.sensor, args.follow, args.interval)
+        forward(args.file, args.url, args.format, args.sensor, args.follow, args.interval, force_simulated=args.simulated)
 
 
 if __name__ == "__main__":

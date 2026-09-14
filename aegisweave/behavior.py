@@ -16,6 +16,7 @@ class Observation:
     failed: bool
     nbytes: int
     packet_rate: float
+    missing: tuple[str, ...] = ()
 
 
 def _entropy(values) -> float:
@@ -69,12 +70,21 @@ class BehaviorEngine:
         edge = (str(flow.destination), flow.destination_port, flow.protocol)
         current = Observation(now, str(flow.destination), flow.destination_port, flow.protocol,
                               flow.failed, flow.bytes + flow.reverse_bytes,
-                              (flow.packets + flow.reverse_packets) / max(flow.duration, .001))
+                              (flow.packets + flow.reverse_packets) / max(flow.duration, .001),
+                              tuple(getattr(flow, "missing_features", ())))
         history.append(current)
         recent = [o for o in history if o.at >= now - 30]
         first = history[0].at
         rates = [o.packet_rate for o in recent]
         counts = {w: sum(o.at >= now - w for o in history) for w in self.windows}
+        missing = {field for observation in recent for field in observation.missing}
+        incomplete = []
+        if "failed" in missing:
+            incomplete.append("failed_ratio_30s")
+        if "reverse_bytes" in missing:
+            incomplete.append("log_bytes_30s")
+        if "reverse_packets" in missing:
+            incomplete.extend(("log_mean_packet_rate", "log_packet_rate_std"))
         # Occupancy describes repeated activity, not repeated model anomalies.
         occupied_bins = len({min(5, int((now - o.at) // 5)) for o in recent})
         available_bins = min(6, max(1, int((now - first) // 5) + 1))
@@ -94,10 +104,13 @@ class BehaviorEngine:
             "temporal_consistency": occupied_bins / available_bins,
             "mean_packet_rate": float(np.mean(rates)), "packet_rate_std": float(np.std(rates)),
             "history_seconds": now - first, "history_truncated": truncated,
+            "incomplete_features": incomplete,
             "available": not late and prior_count >= 2, "late_event": late,
             "evidence": [f"{counts[30]} observed connections to {len({o.destination for o in recent})} destinations in 30s",
                          f"{occupied_bins}/{available_bins} observed 5s bins contain activity; this is activity persistence, not proof of attack"],
         })
+        if incomplete:
+            context["evidence"].append("Some window counters are incomplete because sensor measurements are missing; affected model coordinates use the frozen benign baseline.")
         if not late:
             self._hosts[key] = history
             self._hosts.move_to_end(key)

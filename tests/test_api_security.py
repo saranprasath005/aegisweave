@@ -166,6 +166,53 @@ def test_configured_short_or_duplicate_tokens_fail_closed(tmp_path):
         create_app(engine=FakeEngine(), db_path=tmp_path / "x.db", tokens={"admin": "x" * 32, "viewer": "x" * 32})
 
 
+def test_missing_injected_model_fails_closed_and_openapi_requires_auth(tmp_path):
+    fake = FakeEngine()
+    fake.model = None
+    app = create_app(engine=fake, db_path=tmp_path / "missing.db", tokens=TOKENS)
+    with TestClient(app) as session:
+        assert session.get("/api/models", headers=headers()).json()["available"] is False
+        assert session.get("/api/health").json()["status"] == "degraded"
+        assert session.post("/api/telemetry", json=flow(), headers=headers()).status_code == 503
+        assert session.get("/api/openapi.json").status_code == 401
+        spec = session.get("/api/openapi.json", headers=headers("viewer")).json()
+        assert "/api/telemetry" in spec["paths"] and "Flow" in spec["components"]["schemas"]
+
+
+def test_partial_batch_failures_report_committed_event_ids(client):
+    client.post("/api/telemetry", json=flow("existing"), headers=headers())
+    result = client.post("/api/telemetry/batch", json={"events": [flow("new"), flow("existing")]}, headers=headers())
+    assert result.status_code == 409
+    detail = result.json()["detail"]
+    assert detail["accepted"] == 1 and detail["event_ids"] == ["new"]
+    assert detail["errors"] == [{"event_id": "existing", "type": "DuplicateEvent"}]
+    assert client.get("/api/health").json()["status"] == "healthy"
+
+
+def test_metrics_resource_sampling_exposes_interval(client):
+    resources = client.get("/api/metrics", headers=headers()).json()["resources"]
+    if resources.get("status") != "unavailable":
+        assert resources["rss_bytes"] > 0
+        assert resources["cpu_sample_interval_seconds"] >= 0
+
+
+def test_future_clock_poisoning_rejects_entire_batch_before_queue(client):
+    future = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
+    result = client.post("/api/telemetry/batch", json={"events": [flow("valid"), flow("future", timestamp=future)]}, headers=headers())
+    assert result.status_code == 422
+    assert client.app.state.worker.engine.count == 0
+    assert client.get("/api/overview", headers=headers()).json()["total_events"] == 0
+
+
+def test_nonfinite_json_is_validation_error_without_input_reflection(client):
+    import json
+    body = json.dumps(flow(duration=float("nan")))
+    result = client.post("/api/telemetry", content=body, headers=headers(**{"Content-Type": "application/json"}))
+    assert result.status_code == 422
+    assert "NaN" not in result.text
+    assert client.app.state.worker.engine.count == 0
+
+
 def test_api_response_workflow_and_policy_never_live(client):
     client.post("/api/telemetry", json=flow(), headers=headers())
     request = {"event_id": "e1", "action": "block_source", "reason": "Review suspicious evidence", "ttl_seconds": 60}
@@ -195,7 +242,7 @@ def test_database_reopen_and_retention(tmp_path):
     evidence.close()
     reopened = Store(path)
     assert len(reopened.events()) == 2
-    assert reopened.health()["schema_version"] == 1
+    assert reopened.health()["schema_version"] == 2
     reopened.close()
 
 
@@ -209,4 +256,28 @@ def test_incident_event_time_boundaries_and_simulation_separation(tmp_path):
     groups = evidence.incidents()
     assert sorted(x["event_count"] for x in groups) == [1, 1, 3]
     assert len({x["id"] for x in groups}) == 3
+    evidence.close()
+
+
+def test_registry_preserves_distinct_fits_of_same_architecture(tmp_path):
+    evidence = Store(tmp_path / "models.db")
+    evidence.register_model({"version": "same-architecture", "id": "fit-one"}, "a" * 64)
+    evidence.register_model({"version": "same-architecture", "id": "fit-two"}, "b" * 64)
+    assert len(evidence.models()) == 2
+    assert {x["artifact_sha256"] for x in evidence.models()} == {"a" * 64, "b" * 64}
+    evidence.close()
+
+
+def test_registry_v1_migration_preserves_old_metadata(tmp_path):
+    import json
+    import sqlite3
+    path = tmp_path / "legacy.db"
+    with sqlite3.connect(path) as legacy:
+        legacy.execute("CREATE TABLE models (version TEXT PRIMARY KEY, registered_at TEXT NOT NULL, metadata_json TEXT NOT NULL)")
+        legacy.execute("INSERT INTO models VALUES (?,?,?)", ("v1", datetime.now(timezone.utc).isoformat(), json.dumps({"id": "old-fit", "version": "v1"})))
+        legacy.execute("PRAGMA user_version=1")
+    evidence = Store(path)
+    assert evidence.models() == [{"id": "old-fit", "version": "v1"}]
+    evidence.register_model({"id": "new-fit", "version": "v1"})
+    assert len(evidence.models()) == 2
     evidence.close()

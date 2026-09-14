@@ -151,6 +151,9 @@ class ResponseEngine:
             # Approval re-evaluates the current policy, not a proposal-time policy snapshot.
             if denied:
                 return self._transition(item, "denied", actor, denied)
+            # A later policy can shorten a lease; approval never extends a proposal's expiry.
+            policy_expiry = datetime.now(timezone.utc) + timedelta(seconds=self.policy.ttl_seconds)
+            item["expires_at"] = min(datetime.fromisoformat(item["expires_at"]), policy_expiry).isoformat()
             return self._transition(item, "simulated", actor, reason)
 
     def rollback(self, response_id, actor, reason):

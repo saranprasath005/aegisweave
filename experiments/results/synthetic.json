@@ -1,7 +1,7 @@
 {
   "experiment": "AegisWeave independent synthetic episode research",
   "simulated": true,
-  "generated_at": "2026-09-13T21:26:31.566537+00:00",
+  "generated_at": "2026-09-14T05:16:30.246803+00:00",
   "seed": 42,
   "warning": "These measured synthetic results cannot establish network deployment effectiveness or scientific novelty.",
   "protocol": {
@@ -9,7 +9,7 @@
     "fit": "Train only; temperature and benign rank calibration on calibration; stacking on fusion; FPR-budget threshold on tuning",
     "threshold_objective": "maximize binary F1 subject to validation FPR <= 0.05; test FPR may be higher",
     "temporal": "causal windows reset at each independent episode; no future events",
-    "baseline_selection": "All architecture parameters fixed before final test; no test-driven tuning"
+    "baseline_selection": "Parameters fixed within each run; this seed-42 test was inspected during implementation and is exploratory, not an untouched confirmatory set"
   },
   "leakage": {
     "passed": true,
@@ -508,8 +508,8 @@
         "scan"
       ],
       "latency_ms": {
-        "p50": 6.797450000249228,
-        "p95": 7.5419699996928085,
+        "p50": 7.664699998713331,
+        "p95": 8.63673999774619,
         "samples": 1348
       },
       "definitions": {
@@ -625,8 +625,8 @@
         "scan"
       ],
       "latency_ms": {
-        "p50": 6.812150000314432,
-        "p95": 7.4891600004320935,
+        "p50": 7.8273500002978835,
+        "p95": 9.52684000330919,
         "samples": 778
       },
       "definitions": {
@@ -755,8 +755,8 @@
           "scan"
         ],
         "latency_ms": {
-          "p50": 6.635300000198185,
-          "p95": 7.440449999421616,
+          "p50": 7.71224999698461,
+          "p95": 9.076780000759754,
           "samples": 778
         },
         "definitions": {
@@ -776,31 +776,38 @@
     ]
   },
   "performance": {
-    "single_event_model_and_local_explanation_ms_p50": 6.828200000200013,
-    "single_event_model_and_local_explanation_ms_p95": 7.366900000306487,
+    "single_event_model_and_local_explanation_ms_p50": 7.677699999476317,
+    "single_event_model_and_local_explanation_ms_p95": 8.546625002782093,
     "single_event_samples": 100,
     "batch_inference_ms_per_flow": {
-      "baseline_logistic": 0.00023864985186445494,
-      "supervised": 0.001534272996650543,
-      "anomaly_only": 0.004454599406211537,
-      "temporal_only": 0.0012301186942418113,
-      "full_components_and_fusion": 0.00770081602410704
+      "baseline_logistic": 0.00033093471732439656,
+      "supervised": 0.0016844955454590848,
+      "anomaly_only": 0.004783753706693292,
+      "temporal_only": 0.0015977744807769718,
+      "full_components_and_fusion": 0.008698293767762039
     },
-    "process_rss_bytes_at_end": 195149824,
-    "cpu_seconds": 36.125,
-    "wall_seconds": 36.52783410000029,
+    "process_rss_bytes_at_end": 198004736,
+    "cpu_seconds": 40.78125,
+    "wall_seconds": 41.19885599999543,
     "platform": "Windows-11-10.0.26200-SP0",
     "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
     "threads": 1
   },
   "model": {
-    "id": "aegisweave-synthetic-42",
+    "id": "aegisweave-synthetic-42-6d4888584616",
     "version": "1.1.0",
+    "training_fingerprint": "6d4888584616dabf373cba5b1262981ed136b72b151ba3ecbeb4e72191cd1c97",
+    "implementation_sha256": {
+      "ml.py": "428a0b6b1fb3884a5f3bde2cd2feb5fe8ef628218dc263ace8523c5da9aa9598",
+      "features.py": "3f9622b8b8a1ae39a66113db4a4e1684da89716948c2a107f8a2d639890be421",
+      "behavior.py": "3b29cbc8859edcce39d2a8059579c349d4a423f84695a6958fde3ea7a7c75a28",
+      "demo.py": "fd5d0a859d9c8ceb75ba1a85388684f9bc20c059302fa44bf9156d7edf798f7c"
+    },
     "dataset": "AegisWeave synthetic independent host episodes v1",
     "simulated_training": true,
     "feature_schema": "aegisweave.flow.v1",
-    "trained_at": "2026-09-13T21:25:58.745462+00:00",
-    "training_seconds": 3.0796869000005245,
+    "trained_at": "2026-09-14T05:15:53.140858+00:00",
+    "training_seconds": 3.3990735999977915,
     "status": "demo-only",
     "training_rows": 2690,
     "leakage_checks": {
@@ -1229,8 +1236,8 @@
         "scan"
       ],
       "latency_ms": {
-        "p50": 6.797450000249228,
-        "p95": 7.5419699996928085,
+        "p50": 7.664699998713331,
+        "p95": 8.63673999774619,
         "samples": 1348
       },
       "definitions": {

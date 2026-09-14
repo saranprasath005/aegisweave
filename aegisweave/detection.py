@@ -4,7 +4,7 @@ from __future__ import annotations
 import math
 import threading
 import time
-from collections import Counter, deque
+from collections import Counter, OrderedDict, deque
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -242,6 +242,43 @@ class DriftMonitor:
                 "signals": signals, "recommended_action": "Collect labeled representative telemetry; retrain offline, evaluate, approve and reload"}
 
 
+class DriftRegistry:
+    """Separate sensor populations and synthetic demonstrations before measuring shift.
+
+    The main card shows the most recently observed real sensor, falling back to a
+    simulated stream only when no real telemetry exists. Every stream's status is
+    returned separately so a quiet sensor is not masked by a busier population.
+    """
+    def __init__(self, window_size=100, max_streams=128):
+        self.window_size, self.max_streams = window_size, max_streams
+        self.streams: OrderedDict[tuple[str, bool], DriftMonitor] = OrderedDict()
+
+    def observe(self, flow: Flow, result: dict):
+        key = (flow.sensor_id, flow.simulated)
+        if key not in self.streams:
+            self.streams[key] = DriftMonitor(self.window_size)
+        self.streams.move_to_end(key)
+        self.streams[key].observe(flow, result)
+        while len(self.streams) > self.max_streams:
+            self.streams.popitem(last=False)
+
+    def snapshot(self):
+        if not self.streams:
+            return {**DriftMonitor(self.window_size).snapshot(), "streams": [], "scope": None,
+                    "monitored_streams": 0, "max_streams": self.max_streams}
+        keys = list(reversed(self.streams))
+        selected = next((key for key in keys if not key[1]), keys[0])
+        snapshot = self.streams[selected].snapshot()
+        summaries = []
+        for key in keys:
+            stream = self.streams[key].snapshot()
+            summaries.append({"sensor_id": key[0], "simulated": key[1],
+                              **{name: stream[name] for name in ("status", "reference_count", "current_count", "window_size")}})
+        return {**snapshot, "scope": {"sensor_id": selected[0], "simulated": selected[1]},
+                "streams": summaries, "monitored_streams": len(summaries), "max_streams": self.max_streams,
+                "message": snapshot["message"] + f" Showing sensor {selected[0]} ({'simulated' if selected[1] else 'real'} telemetry). Each sensor and simulation stream has independent windows."}
+
+
 class DetectionEngine:
     def __init__(self, model, store=None, config: DetectionConfig | None = None, asset_importance: dict[str, float] | None = None, risk_config: RiskConfig | None = None):
         from aegisweave.behavior import BehaviorEngine
@@ -250,7 +287,7 @@ class DetectionEngine:
         self.risk_config = risk_config or RiskConfig()
         self.assets = dict(asset_importance or {})
         self.behavior = BehaviorEngine()
-        self.drift = DriftMonitor()
+        self.drift = DriftRegistry()
         self.lock = threading.RLock()
         self.processed = 0
         self.errors = 0
@@ -313,5 +350,5 @@ class DetectionEngine:
         with self.lock:
             self.model = model
             self.behavior.reset()
-            self.drift = DriftMonitor(self.drift.window_size)
+            self.drift = DriftRegistry(self.drift.window_size)
             self.last_error = None

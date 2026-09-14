@@ -9,7 +9,8 @@ from aegisweave.demo import generate_demo, generate_episodes
 from aegisweave.detection import DetectionEngine
 from aegisweave.features import FLOW_FEATURES, flow_features
 from aegisweave.ml import (ClassSupport, ModelBundle, _attack_log_odds, check_split_isolation,
-                           episodes_to_matrix, evaluate_decisions)
+                           choose_threshold, episodes_to_matrix, evaluate_decisions)
+from aegisweave.behavior import BehaviorEngine
 from aegisweave.schema import Flow
 
 
@@ -139,3 +140,39 @@ def test_prediction_is_deterministic_and_late_events_get_no_history(bundle):
     again = bundle.predict(measured_flow(), {"available": False, "history_count": 0})
     assert again == bundle.predict(measured_flow(), {"available": False, "history_count": 0})
     assert first["model"]["version"] == "1.1.0"
+
+
+def test_saturated_anomaly_scores_can_respect_zero_false_positive_budget():
+    labels = np.array([0, 0, 1, 1])
+    scores = np.array([1., 1., 1., 1.])
+    threshold = choose_threshold(labels, scores, max_fpr=0)
+    assert threshold > 1 and not (scores >= threshold).any()
+
+
+def test_missing_window_counters_are_masked_until_they_age_out(bundle):
+    engine = BehaviorEngine()
+    base = measured_flow()
+    data = base.model_dump()
+    data.pop("reverse_bytes")
+    data.pop("failed")
+    partial = Flow.model_validate(data)
+    context = engine.observe(partial)
+    assert set(context["incomplete_features"]) == {"log_bytes_30s", "failed_ratio_30s"}
+    for second in (1, 2, 3):
+        context = engine.observe(measured_flow(timestamp=base.timestamp + timedelta(seconds=second)))
+    prediction = bundle.predict(base, context)
+    fully_measured_context = {**context, "incomplete_features": []}
+    full = bundle.predict(base, fully_measured_context)
+    assert prediction["behavior"]["history_reliability"] < full["behavior"]["history_reliability"]
+    expired = engine.observe(measured_flow(timestamp=base.timestamp + timedelta(seconds=34)))
+    assert expired["incomplete_features"] == []
+
+
+def test_saved_prediction_is_traceable_to_verified_artifact(bundle_dir):
+    restored = ModelBundle.load(bundle_dir)
+    manifest = json.loads((bundle_dir / "manifest.json").read_text(encoding="utf-8"))
+    prediction = restored.predict(measured_flow(), {"available": False, "history_count": 0})
+    assert prediction["model"]["artifact_sha256"] == manifest["sha256"]
+    fingerprint = prediction["model"]["training_fingerprint"]
+    assert len(fingerprint) == 64 and fingerprint[:12] in prediction["model"]["id"]
+    assert set(restored.metadata["implementation_sha256"]) == {"ml.py", "features.py", "behavior.py", "demo.py"}

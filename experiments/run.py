@@ -123,7 +123,7 @@ def run_experiment(output: Path, seed=42, model_path: Path | None = None) -> dic
                            "fit": "Train only; temperature and benign rank calibration on calibration; stacking on fusion; FPR-budget threshold on tuning",
                            "threshold_objective": "maximize binary F1 subject to validation FPR <= 0.05; test FPR may be higher",
                            "temporal": "causal windows reset at each independent episode; no future events",
-                           "baseline_selection": "All architecture parameters fixed before final test; no test-driven tuning"},
+                           "baseline_selection": "Parameters fixed within each run; this seed-42 test was inspected during implementation and is exploratory, not an untouched confirmatory set"},
               "leakage": bundle.metadata["leakage_checks"], "variants": variants,
               "multiclass": bundle.metadata["metrics"]["per_class"], "stress": stress,
               "decisions": decisions,

@@ -56,8 +56,11 @@ class Auth:
                 raise HTTPException(403, "Cross-site requests are not allowed")
             origin = request.headers.get("origin")
             if origin:
-                expected = urlsplit(str(request.base_url))
-                supplied = urlsplit(origin)
+                try:
+                    expected = urlsplit(str(request.base_url))
+                    supplied = urlsplit(origin)
+                except ValueError as exc:
+                    raise HTTPException(403, "Request Origin is invalid") from exc
                 if supplied.scheme not in {"http", "https"} or supplied.netloc != expected.netloc or supplied.scheme != expected.scheme or supplied.path not in {"", "/"} or supplied.query or supplied.fragment or supplied.username:
                     raise HTTPException(403, "Request Origin must match this server")
 

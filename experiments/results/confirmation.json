@@ -1,0 +1,423 @@
+{
+  "experiment": "Frozen-model fresh synthetic draws",
+  "simulated": true,
+  "generated_at": "2026-09-14T05:16:41.770014+00:00",
+  "seed": 381947,
+  "frozen_model": {
+    "id": "aegisweave-synthetic-42-6d4888584616",
+    "version": "1.1.0",
+    "training_fingerprint": "6d4888584616dabf373cba5b1262981ed136b72b151ba3ecbeb4e72191cd1c97",
+    "artifact_sha256": "f86d6dcd3004c2c2b63a8865ec0be939adf29ee010b770fe14b524bafaa33b34",
+    "thresholds": {
+      "full": 0.5184978914385211,
+      "hybrid": 0.6057511927222542,
+      "without_anomaly": 0.15026492152625856,
+      "without_temporal": 0.5408547048741095,
+      "without_profile": 0.5385282819354393
+    }
+  },
+  "refitting": false,
+  "threshold_selection": false,
+  "warning": "Fresh draws from the same hand-designed generator after implementation fixes. This is not independent public or real-world validation, and was not preregistered.",
+  "leakage": {
+    "passed": true,
+    "checks": [
+      "episode disjointness",
+      "event identity",
+      "exact normalized feature hash"
+    ],
+    "partitions": {
+      "train": {
+        "rows": 2690,
+        "episodes": 80,
+        "class_counts": {
+          "brute_force": 551,
+          "dos": 297,
+          "exfiltration": 247,
+          "normal": 1356,
+          "scan": 239
+        }
+      },
+      "calibration": {
+        "rows": 762,
+        "episodes": 24,
+        "class_counts": {
+          "brute_force": 62,
+          "dos": 133,
+          "exfiltration": 249,
+          "normal": 250,
+          "scan": 68
+        }
+      },
+      "fusion": {
+        "rows": 803,
+        "episodes": 24,
+        "class_counts": {
+          "brute_force": 100,
+          "dos": 144,
+          "exfiltration": 103,
+          "normal": 301,
+          "scan": 155
+        }
+      },
+      "tuning": {
+        "rows": 796,
+        "episodes": 24,
+        "class_counts": {
+          "brute_force": 55,
+          "dos": 153,
+          "exfiltration": 148,
+          "normal": 320,
+          "scan": 120
+        }
+      },
+      "test": {
+        "rows": 1348,
+        "episodes": 40,
+        "class_counts": {
+          "brute_force": 273,
+          "dos": 112,
+          "exfiltration": 188,
+          "normal": 586,
+          "scan": 189
+        }
+      },
+      "confirmation": {
+        "rows": 2648,
+        "episodes": 80,
+        "class_counts": {
+          "brute_force": 469,
+          "dos": 430,
+          "exfiltration": 257,
+          "normal": 1115,
+          "scan": 377
+        }
+      },
+      "confirmation_unknown": {
+        "rows": 1327,
+        "episodes": 40,
+        "class_counts": {
+          "brute_force": 87,
+          "dos": 48,
+          "exfiltration": 31,
+          "normal": 397,
+          "scan": 150,
+          "unknown_beacon": 614
+        }
+      }
+    }
+  },
+  "binary_score": {
+    "accuracy": 0.9954682779456193,
+    "precision": 0.9993434011818779,
+    "recall": 0.9928245270711024,
+    "f1": 0.9960732984293194,
+    "false_positive_rate": 0.0008968609865470852,
+    "false_negative_rate": 0.007175472928897586,
+    "roc_auc": 0.9999157547409897,
+    "pr_auc": 0.9999396990368833,
+    "brier_score": 0.004295871281042126,
+    "threshold": 0.5184978914385211,
+    "confusion_matrix": {
+      "tn": 1114,
+      "fp": 1,
+      "fn": 11,
+      "tp": 1522
+    },
+    "samples": 2648,
+    "per_class": {
+      "brute_force": {
+        "precision": 0.8794466403162056,
+        "recall": 0.9488272921108742,
+        "f1-score": 0.9128205128205128,
+        "support": 469.0
+      },
+      "dos": {
+        "precision": 0.9623655913978495,
+        "recall": 0.8325581395348837,
+        "f1-score": 0.8927680798004988,
+        "support": 430.0
+      },
+      "exfiltration": {
+        "precision": 0.4475806451612903,
+        "recall": 0.8638132295719845,
+        "f1-score": 0.5896414342629482,
+        "support": 257.0
+      },
+      "normal": {
+        "precision": 0.8721560130010835,
+        "recall": 0.7219730941704036,
+        "f1-score": 0.7899901864573111,
+        "support": 1115.0
+      },
+      "scan": {
+        "precision": 0.9914529914529915,
+        "recall": 0.9230769230769231,
+        "f1-score": 0.9560439560439561,
+        "support": 377.0
+      },
+      "accuracy": 0.8225075528700906,
+      "macro avg": {
+        "precision": 0.8306003762658841,
+        "recall": 0.8580497356930138,
+        "f1-score": 0.8282528338770454,
+        "support": 2648.0
+      },
+      "weighted avg": {
+        "precision": 0.8638737298677542,
+        "recall": 0.8225075528700906,
+        "f1-score": 0.8326316362390808,
+        "support": 2648.0
+      }
+    }
+  },
+  "decisions": {
+    "decision_counts": {
+      "normal": {
+        "normal": 999,
+        "suspicious": 2,
+        "anomalous": 6,
+        "malicious": 0,
+        "unknown": 108
+      },
+      "exfiltration": {
+        "normal": 2,
+        "suspicious": 33,
+        "anomalous": 1,
+        "malicious": 194,
+        "unknown": 27
+      },
+      "brute_force": {
+        "normal": 2,
+        "suspicious": 25,
+        "anomalous": 1,
+        "malicious": 431,
+        "unknown": 10
+      },
+      "scan": {
+        "normal": 0,
+        "suspicious": 7,
+        "anomalous": 1,
+        "malicious": 353,
+        "unknown": 16
+      },
+      "dos": {
+        "normal": 4,
+        "suspicious": 50,
+        "anomalous": 0,
+        "malicious": 352,
+        "unknown": 24
+      }
+    },
+    "per_label": {
+      "normal": {
+        "flows": 1115,
+        "correct_attribution": 999,
+        "wrong_attack_attribution": 1,
+        "flagged_rate": 0.10403587443946183,
+        "correct_attribution_rate": 0.8959641255605382,
+        "wrong_attack_attribution_rate": 0.0008968609865470852
+      },
+      "exfiltration": {
+        "flows": 257,
+        "correct_attribution": 194,
+        "wrong_attack_attribution": 0,
+        "flagged_rate": 0.9922178988326849,
+        "correct_attribution_rate": 0.754863813229572,
+        "wrong_attack_attribution_rate": 0.0
+      },
+      "brute_force": {
+        "flows": 469,
+        "correct_attribution": 436,
+        "wrong_attack_attribution": 1,
+        "flagged_rate": 0.9957356076759062,
+        "correct_attribution_rate": 0.929637526652452,
+        "wrong_attack_attribution_rate": 0.0021321961620469083
+      },
+      "scan": {
+        "flows": 377,
+        "correct_attribution": 347,
+        "wrong_attack_attribution": 6,
+        "flagged_rate": 1.0,
+        "correct_attribution_rate": 0.9204244031830239,
+        "wrong_attack_attribution_rate": 0.015915119363395226
+      },
+      "dos": {
+        "flows": 430,
+        "correct_attribution": 354,
+        "wrong_attack_attribution": 2,
+        "flagged_rate": 0.9906976744186047,
+        "correct_attribution_rate": 0.8232558139534883,
+        "wrong_attack_attribution_rate": 0.004651162790697674
+      }
+    },
+    "summary": {
+      "benign_flows": 1115,
+      "attack_flows": 1533,
+      "benign_normal_rate": 0.8959641255605382,
+      "benign_abstention_rate": 0.0968609865470852,
+      "benign_alert_rate": 0.007174887892376682,
+      "benign_malicious_rate": 0.0,
+      "attack_flagged_rate": 0.994781474233529,
+      "attack_malicious_rate": 0.867579908675799,
+      "attack_correct_attribution_rate": 0.868232224396608,
+      "attack_wrong_attribution_rate": 0.005870841487279843
+    },
+    "config": {
+      "malicious_threshold": 0.78,
+      "suspicious_threshold": 0.42,
+      "minimum_confidence": 0.7,
+      "minimum_reliability": 0.5,
+      "anomaly_threshold": 0.95,
+      "behavior_threshold": 0.85,
+      "attribution_percentile": 0.99
+    },
+    "known_attack_classes": [
+      "brute_force",
+      "dos",
+      "exfiltration",
+      "scan"
+    ],
+    "latency_ms": {
+      "p50": 7.438150001689792,
+      "p95": 13.006844999472394,
+      "samples": 2648
+    },
+    "definitions": {
+      "flagged": "any decision other than normal (includes unknown abstention)",
+      "wrong_attack_attribution": "analyst-facing label is a known attack class that differs from the true label"
+    }
+  },
+  "withheld_unknown": {
+    "decision_counts": {
+      "normal": {
+        "normal": 377,
+        "suspicious": 1,
+        "anomalous": 2,
+        "malicious": 0,
+        "unknown": 17
+      },
+      "scan": {
+        "normal": 0,
+        "suspicious": 1,
+        "anomalous": 1,
+        "malicious": 138,
+        "unknown": 10
+      },
+      "unknown_beacon": {
+        "normal": 0,
+        "suspicious": 0,
+        "anomalous": 614,
+        "malicious": 0,
+        "unknown": 0
+      },
+      "dos": {
+        "normal": 0,
+        "suspicious": 0,
+        "anomalous": 0,
+        "malicious": 48,
+        "unknown": 0
+      },
+      "brute_force": {
+        "normal": 0,
+        "suspicious": 3,
+        "anomalous": 1,
+        "malicious": 78,
+        "unknown": 5
+      },
+      "exfiltration": {
+        "normal": 0,
+        "suspicious": 0,
+        "anomalous": 0,
+        "malicious": 31,
+        "unknown": 0
+      }
+    },
+    "per_label": {
+      "normal": {
+        "flows": 397,
+        "correct_attribution": 377,
+        "wrong_attack_attribution": 0,
+        "flagged_rate": 0.05037783375314864,
+        "correct_attribution_rate": 0.9496221662468514,
+        "wrong_attack_attribution_rate": 0.0
+      },
+      "scan": {
+        "flows": 150,
+        "correct_attribution": 135,
+        "wrong_attack_attribution": 3,
+        "flagged_rate": 1.0,
+        "correct_attribution_rate": 0.9,
+        "wrong_attack_attribution_rate": 0.02
+      },
+      "unknown_beacon": {
+        "flows": 614,
+        "correct_attribution": 0,
+        "wrong_attack_attribution": 0,
+        "flagged_rate": 1.0,
+        "correct_attribution_rate": 0.0,
+        "wrong_attack_attribution_rate": 0.0
+      },
+      "dos": {
+        "flows": 48,
+        "correct_attribution": 48,
+        "wrong_attack_attribution": 0,
+        "flagged_rate": 1.0,
+        "correct_attribution_rate": 1.0,
+        "wrong_attack_attribution_rate": 0.0
+      },
+      "brute_force": {
+        "flows": 87,
+        "correct_attribution": 78,
+        "wrong_attack_attribution": 0,
+        "flagged_rate": 1.0,
+        "correct_attribution_rate": 0.896551724137931,
+        "wrong_attack_attribution_rate": 0.0
+      },
+      "exfiltration": {
+        "flows": 31,
+        "correct_attribution": 31,
+        "wrong_attack_attribution": 0,
+        "flagged_rate": 1.0,
+        "correct_attribution_rate": 1.0,
+        "wrong_attack_attribution_rate": 0.0
+      }
+    },
+    "summary": {
+      "benign_flows": 397,
+      "attack_flows": 930,
+      "benign_normal_rate": 0.9496221662468514,
+      "benign_abstention_rate": 0.042821158690176324,
+      "benign_alert_rate": 0.007556675062972292,
+      "benign_malicious_rate": 0.0,
+      "attack_flagged_rate": 1.0,
+      "attack_malicious_rate": 0.3172043010752688,
+      "attack_correct_attribution_rate": 0.3139784946236559,
+      "attack_wrong_attribution_rate": 0.0032258064516129032
+    },
+    "config": {
+      "malicious_threshold": 0.78,
+      "suspicious_threshold": 0.42,
+      "minimum_confidence": 0.7,
+      "minimum_reliability": 0.5,
+      "anomaly_threshold": 0.95,
+      "behavior_threshold": 0.85,
+      "attribution_percentile": 0.99
+    },
+    "known_attack_classes": [
+      "brute_force",
+      "dos",
+      "exfiltration",
+      "scan"
+    ],
+    "latency_ms": {
+      "p50": 8.980099999462254,
+      "p95": 17.56026000221027,
+      "samples": 1327
+    },
+    "definitions": {
+      "flagged": "any decision other than normal (includes unknown abstention)",
+      "wrong_attack_attribution": "analyst-facing label is a known attack class that differs from the true label"
+    }
+  }
+}

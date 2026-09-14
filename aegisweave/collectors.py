@@ -95,7 +95,7 @@ def read_jsonl(path: Path, follow=False, max_line=16384):
                 raise ValueError(f"Invalid JSONL evidence at line {line_number}: {exc}") from exc
 
 
-def forward(path: Path, url: str, format: str, sensor_id: str, follow=False, interval=0):
+def forward(path: Path, url: str, format: str, sensor_id: str, follow=False, interval=0, force_simulated=False):
     import httpx
     if interval < 0 or interval > 60:
         raise ValueError("Replay interval must be between 0 and 60 seconds")
@@ -120,6 +120,8 @@ def forward(path: Path, url: str, format: str, sensor_id: str, follow=False, int
         accepted = 0
         for row in read_jsonl(path, follow):
             flow = zeek_to_flow(row, sensor_id) if format == "zeek" else Flow.model_validate(row)
+            if force_simulated:
+                flow = flow.model_copy(update={"simulated": True})
             response = client.post("/api/telemetry", json=flow.model_dump(mode="json"))
             if response.status_code == 409:
                 print(json.dumps({"event_id": flow.event_id, "status": "already_ingested"}), flush=True)

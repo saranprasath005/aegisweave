@@ -44,7 +44,7 @@ class Store:
 
     def _migrate(self):
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if version > 1:
+        if version > 2:
             raise RuntimeError("Database schema is newer than this application")
         if version == 0:
             self.db.executescript("""
@@ -82,6 +82,21 @@ class Store:
             CREATE TABLE settings (key TEXT PRIMARY KEY,value_json TEXT NOT NULL);
             CREATE TABLE models (version TEXT PRIMARY KEY, registered_at TEXT NOT NULL, metadata_json TEXT NOT NULL);
             PRAGMA user_version=1;
+            COMMIT;
+            """)
+            version = 1
+        if version == 1:
+            self.db.executescript("""
+            BEGIN;
+            ALTER TABLE models RENAME TO models_v1;
+            CREATE TABLE models (model_key TEXT PRIMARY KEY, version TEXT NOT NULL,
+                                 registered_at TEXT NOT NULL, metadata_json TEXT NOT NULL);
+            INSERT INTO models SELECT COALESCE(json_extract(metadata_json,'$.artifact_sha256'),
+                json_extract(metadata_json,'$.training_fingerprint'),json_extract(metadata_json,'$.id'),version),
+                version,registered_at,metadata_json FROM models_v1;
+            DROP TABLE models_v1;
+            CREATE INDEX models_version ON models(version);
+            PRAGMA user_version=2;
             COMMIT;
             """)
 
@@ -131,12 +146,18 @@ class Store:
         self.db.execute("UPDATE incidents SET first_epoch=(SELECT MIN(e.event_epoch) FROM events e JOIN incident_events ie ON ie.event_id=e.id WHERE ie.incident_id=?),last_epoch=(SELECT MAX(e.event_epoch) FROM events e JOIN incident_events ie ON ie.event_id=e.id WHERE ie.incident_id=?) WHERE id=?", (incident_id, incident_id, incident_id))
 
     def _prune(self):
-        self.db.execute("DELETE FROM events WHERE received_at < strftime('%Y-%m-%dT%H:%M:%f+00:00','now',?)", (f"-{self.retention_days} days",))
-        self.db.execute("DELETE FROM events WHERE id IN (SELECT id FROM events ORDER BY received_at DESC,rowid DESC LIMIT -1 OFFSET ?)", (self.max_events,))
+        deleted = self.db.execute("DELETE FROM events WHERE received_at < strftime('%Y-%m-%dT%H:%M:%f+00:00','now',?)", (f"-{self.retention_days} days",)).rowcount
+        deleted += self.db.execute("DELETE FROM events WHERE id IN (SELECT id FROM events ORDER BY received_at DESC,rowid DESC LIMIT -1 OFFSET ?)", (self.max_events,)).rowcount
         self.db.execute("DELETE FROM incidents WHERE NOT EXISTS (SELECT 1 FROM incident_events WHERE incident_id=incidents.id)")
+        if deleted:
+            self.db.execute("UPDATE incidents SET first_epoch=(SELECT MIN(e.event_epoch) FROM events e JOIN incident_events ie ON ie.event_id=e.id WHERE ie.incident_id=incidents.id),last_epoch=(SELECT MAX(e.event_epoch) FROM events e JOIN incident_events ie ON ie.event_id=e.id WHERE ie.incident_id=incidents.id)")
         # Audit and response records have independent caps; evidence deletion does not remove audits.
         self.db.execute("DELETE FROM audit WHERE id IN (SELECT id FROM audit ORDER BY id DESC LIMIT -1 OFFSET ?)", (self.max_audit,))
         self.db.execute("DELETE FROM responses WHERE status IN ('expired','rolled_back','denied') AND id IN (SELECT id FROM responses ORDER BY created_at DESC LIMIT -1 OFFSET ?)", (self.max_audit,))
+
+    def prune(self):
+        with self.lock, self.db:
+            self._prune()
 
     def event(self, event_id):
         with self.lock:
@@ -257,9 +278,11 @@ class Store:
         with self.lock:
             return self.db.execute("SELECT COUNT(*) FROM audit WHERE action=? AND timestamp>=?", (action, since)).fetchone()[0]
 
-    def register_model(self, metadata):
+    def register_model(self, metadata, artifact_sha256=None):
+        metadata = {**metadata, **({"artifact_sha256": artifact_sha256} if artifact_sha256 else {})}
+        identity = metadata.get("artifact_sha256") or metadata.get("training_fingerprint") or metadata.get("id") or metadata.get("version", "unknown")
         with self.lock, self.db:
-            self.db.execute("INSERT INTO models VALUES (?,?,?) ON CONFLICT(version) DO UPDATE SET metadata_json=excluded.metadata_json", (str(metadata.get("version", "unknown")), utc_now(), encode(metadata)))
+            self.db.execute("INSERT INTO models VALUES (?,?,?,?) ON CONFLICT(model_key) DO UPDATE SET metadata_json=excluded.metadata_json", (str(identity), str(metadata.get("version", "unknown")), utc_now(), encode(metadata)))
 
     def models(self):
         with self.lock:
@@ -270,7 +293,7 @@ class Store:
             with self.lock:
                 self.db.execute("SELECT 1").fetchone()
                 count = self.db.execute("SELECT COUNT(*) FROM events").fetchone()[0]
-            return {"status": "healthy", "engine": "sqlite", "schema_version": 1, "retained_events": count,
+            return {"status": "healthy", "engine": "sqlite", "schema_version": 2, "retained_events": count,
                     "max_events": self.max_events, "retention_days": self.retention_days}
         except sqlite3.Error:
             return {"status": "unavailable"}

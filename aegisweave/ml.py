@@ -6,8 +6,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 import hashlib
+import io
 import json
+import os
 import platform
+import tempfile
 
 import joblib
 import numpy as np
@@ -110,7 +113,13 @@ def metrics(y, score, threshold=.5, labels=None, predictions=None) -> dict:
 
 def choose_threshold(y, score, max_fpr=.05) -> float:
     # Selection exclusively uses the threshold-tuning validation partition.
-    choices = np.unique(np.r_[np.linspace(.05, .95, 37), score, 1.])
+    y, score = np.asarray(y), np.asarray(score, dtype=float)
+    if not len(y) or y.shape != score.shape or not np.isfinite(score).all() or not 0 <= max_fpr <= 1:
+        raise ValueError("Threshold tuning needs matching finite scores and a valid FPR budget")
+    # Rank-based anomaly evidence can saturate at exactly 1 for benign flows.
+    # An explicit all-negative operating point must always be available.
+    all_negative = np.nextafter(max(1., float(score.max())), np.inf)
+    choices = np.unique(np.r_[np.linspace(.05, .95, 37), score, all_negative])
     best = (-1., -1., .5)
     for threshold in choices:
         predicted = score >= threshold
@@ -246,7 +255,12 @@ class ModelBundle:
                 affected.update((4, 6, 7, 9))
         for index in affected:
             x[0, index] = self.flow_center[index]
-        history = np.array([float(context.get("available", False)) * min(1., context.get("history_count", 0) / 8)])
+        incomplete_behavior = set(context.get("incomplete_features", []))
+        for index, feature in enumerate(BEHAVIOR_FEATURES):
+            if feature in incomplete_behavior:
+                b[0, index] = self.profile_center[index]
+        history = np.array([float(context.get("available", False)) * min(1., context.get("history_count", 0) / 8)
+                            * (1 - len(incomplete_behavior) / len(BEHAVIOR_FEATURES))])
         values = self.components(x, b, history)
         probabilities = values["probabilities"][0]
         best = int(np.argmax(probabilities))
@@ -331,16 +345,39 @@ class ModelBundle:
                            "contribution_units": "log-odds", "variant": variant,
                            "validation_threshold": self.thresholds[variant]},
                 "explanation": explanations,
-                "model": {key: self.metadata[key] for key in ("id", "version", "dataset", "simulated_training", "feature_schema")}}
+                "model": {**{key: self.metadata[key] for key in ("id", "version", "dataset", "simulated_training", "feature_schema")},
+                          "training_fingerprint": self.metadata.get("training_fingerprint"),
+                          "artifact_sha256": getattr(self, "artifact_sha256", None)}}
 
     def save(self, path: Path):
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
-        payload = path / "bundle.joblib"
-        joblib.dump(self, payload, compress=3)
-        manifest = {"format": 1, "sha256": hashlib.sha256(payload.read_bytes()).hexdigest(),
-                    "feature_schema": FEATURE_SCHEMA, "sklearn_version": sklearn.__version__, "metadata": self.metadata}
-        (path / "manifest.json").write_text(json.dumps(manifest, indent=2, allow_nan=False), encoding="utf-8")
+        # The digest cannot be part of its own serialized input. Each save hashes
+        # the final artifact; predictions expose it once saved or loaded.
+        self.__dict__.pop("artifact_sha256", None)
+        temporary = []
+        try:
+            with tempfile.NamedTemporaryFile(dir=path, prefix=".bundle-", suffix=".tmp", delete=False) as handle:
+                temporary.append(Path(handle.name))
+                joblib.dump(self, handle, compress=3)
+                handle.flush()
+                os.fsync(handle.fileno())
+            digest = hashlib.sha256(temporary[0].read_bytes()).hexdigest()
+            manifest = {"format": 1, "sha256": digest,
+                        "feature_schema": FEATURE_SCHEMA, "sklearn_version": sklearn.__version__, "metadata": self.metadata}
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path, prefix=".manifest-", suffix=".tmp", delete=False) as handle:
+                temporary.append(Path(handle.name))
+                handle.write(json.dumps(manifest, indent=2, allow_nan=False))
+                handle.flush()
+                os.fsync(handle.fileno())
+            # Each rename is atomic. A reload between the two replacements fails
+            # its digest check safely; an already-loaded model stays usable.
+            os.replace(temporary[0], path / "bundle.joblib")
+            os.replace(temporary[1], path / "manifest.json")
+            self.artifact_sha256 = digest
+        finally:
+            for temporary_file in temporary:
+                temporary_file.unlink(missing_ok=True)
 
     @classmethod
     def load(cls, path: Path):
@@ -356,11 +393,14 @@ class ModelBundle:
             raise ValueError("Model manifest or feature schema mismatch")
         if manifest.get("sklearn_version") != sklearn.__version__:
             raise ValueError("Model sklearn version mismatch; retrain in current environment")
-        if hashlib.sha256(payload.read_bytes()).hexdigest() != manifest.get("sha256"):
+        payload_bytes = payload.read_bytes()
+        if hashlib.sha256(payload_bytes).hexdigest() != manifest.get("sha256"):
             raise ValueError("Model payload hash mismatch")
-        result = joblib.load(payload)
+        # Deserialize the exact bytes verified above, not a second filesystem read.
+        result = joblib.load(io.BytesIO(payload_bytes))
         if not isinstance(result, cls) or result.metadata != manifest["metadata"]:
             raise ValueError("Model metadata mismatch")
+        result.artifact_sha256 = manifest["sha256"]
         return result
 
 
@@ -410,7 +450,16 @@ def fit_bundle(parts: dict[str, MatrixSet], seed=42) -> ModelBundle:
         bundle.fusers[name] = classifier
         bundle.thresholds[name] = choose_threshold(tuning.binary, bundle.score_components(tuned, name))
     importances = bundle.supervised.feature_importances_
-    bundle.metadata = {"id": f"aegisweave-synthetic-{seed}", "version": MODEL_VERSION,
+    implementation = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
+                      for name in ("ml.py", "features.py", "behavior.py", "demo.py")}
+    identity = hashlib.sha256(json.dumps({"implementation": implementation, "seed": seed, "sklearn": sklearn.__version__}, sort_keys=True).encode())
+    for partition in (train, calibration, fusion, tuning):
+        identity.update(partition.flow.astype("<f8").tobytes())
+        identity.update(partition.behavior.astype("<f8").tobytes())
+        identity.update(partition.labels.astype("U").tobytes())
+    fingerprint = identity.hexdigest()
+    bundle.metadata = {"id": f"aegisweave-synthetic-{seed}-{fingerprint[:12]}", "version": MODEL_VERSION,
+                       "training_fingerprint": fingerprint, "implementation_sha256": implementation,
                        "dataset": "AegisWeave synthetic independent host episodes v1", "simulated_training": True,
                        "feature_schema": FEATURE_SCHEMA, "trained_at": datetime.now(timezone.utc).isoformat(),
                        "training_seconds": perf_counter() - start, "status": "demo-only",

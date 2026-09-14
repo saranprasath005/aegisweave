@@ -1,10 +1,11 @@
-"""Live end-to-end verification of the AegisWeave pipeline. Nothing is mocked.
+"""Live end-to-end verification of AegisWeave using explicitly synthetic fixtures.
 
 Starts real server processes (own free ports, fresh databases under var/verify/<run>/),
 drives them through real HTTP and the real CLI, and checks every stage:
 telemetry -> validation -> features/ML -> anomaly/behaviour -> fusion -> attribution -> risk ->
 explanation -> storage/incidents -> response policy -> simulated response -> audit -> dashboard,
 plus persistence across restart, token RBAC and fail-closed model loading.
+Application components are real; all input flows are constructed test evidence.
 
 Run from the repository root:   python scripts/verify_pipeline.py
 Exit code 0 only if every check passes. A JSON report is written next to the run's logs.
@@ -105,7 +106,7 @@ def flow(clock: Clock, gap=1.0, **changes) -> dict:
     values = dict(event_id=f"verify-{uuid4()}", timestamp=clock.next(gap), source="10.200.0.10",
                   destination="172.20.1.9", source_port=50123, destination_port=443, protocol="TCP",
                   duration=1.2, packets=14, bytes=3900, reverse_packets=12, reverse_bytes=9800,
-                  failed=False, syn_ratio=.05, sensor_id="verify")
+                  failed=False, syn_ratio=.05, sensor_id="verify", simulated=True)
     values.update(changes)
     return values
 
@@ -237,12 +238,12 @@ def main() -> int:
                  "resp_pkts": 3, "resp_bytes": 380, "conn_state": "REJ" if i % 2 else "SF"} for i in range(6)]
         zeek = RUN / "conn.json"
         zeek.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
-        replay = cli("replay", str(zeek), "--format", "zeek", "--sensor", "zeek-verify", "--url", server.url)
+        replay = cli("replay", str(zeek), "--format", "zeek", "--sensor", "zeek-verify", "--simulated", "--url", server.url)
         check(stage, "replay CLI forwarded Zeek conn.log", replay.returncode == 0 and last_json(replay.stdout).get("accepted") == 6,
               replay.stderr[-300:] if replay.returncode else "accepted=6")
         zeek_event = api.get(f"/api/events/{zeek_to_flow(rows[1], 'zeek-verify').event_id}").json()
-        check(stage, "Zeek event is real (not simulated), SYN declared unmeasured",
-              zeek_event.get("simulated") is False and zeek_event.get("missing_features") == ["syn_ratio"])
+        check(stage, "constructed Zeek fixture stays simulated; SYN is unmeasured",
+              zeek_event.get("simulated") is True and zeek_event.get("missing_features") == ["syn_ratio"])
         check(stage, "unmeasured field disclosed in explanation", any("Unmeasured fields syn_ratio" in x for x in zeek_event.get("explanation", [])))
 
         # 11. Storage, overview and incidents ---------------------------------------------------
@@ -340,7 +341,11 @@ def main() -> int:
         # 15. Monitoring and model lifecycle ------------------------------------------------------
         stage = "15 monitoring+models"
         drift = api.get("/api/drift").json()
-        check(stage, "drift monitor out of warm-up", drift["status"] in {"stable", "review_required"} and drift["automatic_retraining"] is False, drift["status"])
+        check(stage, "drift populations remain separated by sensor and simulation",
+              drift["monitored_streams"] >= 3 and all(s["simulated"] for s in drift["streams"]) and drift["automatic_retraining"] is False,
+              f"{drift['monitored_streams']} independent sensor windows")
+        check(stage, "sparse sensor remains in warm-up despite busy demo",
+              drift["scope"]["sensor_id"] == "zeek-verify" and drift["status"] == "warming_up" and drift["reference_count"] == 6)
         metrics = api.get("/api/metrics").json()
         check(stage, "no inference errors", metrics["errors"] == 0 and metrics["health"]["status"] == "healthy", f"error_rate={metrics['error_rate']}")
         check(stage, "behaviour snapshot populated", len(api.get("/api/behavior").json()["items"]) > 0)
@@ -399,7 +404,7 @@ def main() -> int:
               analyst.put("/api/policies", json=default_policy).status_code == 403)
         check(stage, "admin changes policy and reloads model", admin.put("/api/policies", json=default_policy).status_code == 200 and
               admin.post("/api/models/reload").status_code == 200)
-        replay = cli("replay", str(zeek), "--format", "zeek", "--sensor", "zeek-rbac", "--url", server.url,
+        replay = cli("replay", str(zeek), "--format", "zeek", "--sensor", "zeek-rbac", "--simulated", "--url", server.url,
                      token_env={"AEGISWEAVE_TOKEN": tokens["AEGISWEAVE_ANALYST_TOKEN"]})
         check(stage, "CLI replay authenticates with analyst token", replay.returncode == 0 and last_json(replay.stdout).get("accepted") == 6)
         for c in (viewer, analyst, admin, anon):
@@ -422,7 +427,9 @@ def main() -> int:
     # Report ---------------------------------------------------------------------------------------------
     failed = [r for r in RESULTS if not r["passed"]]
     report = {"run": str(RUN), "finished_at": datetime.now(timezone.utc).isoformat(), "seconds": round(time.time() - started, 1),
-              "checks": len(RESULTS), "failed": len(failed), "results": RESULTS}
+              "checks": len(RESULTS), "failed": len(failed), "results": RESULTS,
+              "telemetry_origin": "Synthetic normalized and Zeek-shaped fixtures; real local application components, no live traffic capture",
+              "response_mode": "simulation", "model": model.metadata}
     (RUN / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(f"\n{len(RESULTS) - len(failed)}/{len(RESULTS)} checks passed in {report['seconds']} s. Report: {RUN / 'report.json'}")
     print(f"Inspect the populated database in the dashboard:  python -m aegisweave serve --port 8790 --db {db}")

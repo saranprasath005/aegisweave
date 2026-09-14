@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from concurrent.futures import Future
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 from pathlib import Path
 import queue
@@ -12,6 +12,7 @@ import threading
 import time
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
@@ -78,7 +79,7 @@ class SecurityMiddleware:
         except HTTPException as exc:
             await JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=exc.headers)(scope, receive, secure_send)
         except Exception as exc:
-            LOG.error("request_failed path=%s error_type=%s", scope["path"], type(exc).__name__)
+            LOG.error("request_failed error_type=%s", type(exc).__name__)
             await JSONResponse({"detail": "Service operation failed; consult authenticated health and audit information"}, status_code=503)(scope, receive, secure_send)
 
 
@@ -153,10 +154,13 @@ class InferenceWorker:
 
     def submit(self, items):
         with self.submit_lock:
-            if not self.running or not self.thread or not self.thread.is_alive() or self.engine is None:
+            if not self.running or not self.thread or not self.thread.is_alive() or self.engine is None or getattr(self.engine, "model", None) is None:
                 raise HTTPException(503, "Inference service is unavailable; load a verified model first")
             if self.queue.qsize() + len(items) > self.queue.maxsize:
                 raise HTTPException(429, "Inference queue is full; retry after pending events finish", headers={"Retry-After": "2"})
+            max_timestamp = datetime.now(timezone.utc) + timedelta(minutes=5)
+            if any(flow.timestamp > max_timestamp for flow, _ in items):
+                raise HTTPException(422, "Telemetry timestamps may not exceed server time by more than five minutes")
             futures = []
             for flow, raw in items:
                 future = Future()
@@ -201,11 +205,23 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
     responses = ResponseEngine(evidence)
     worker = InferenceWorker(engine, evidence, capacity=queue_capacity)
     started = time.monotonic()
+    resource_lock = threading.Lock()
+    resource_sampled_at = started
+    try:
+        import psutil
+        resource_process = psutil.Process()
+        resource_process.cpu_percent(interval=None)
+    except (ImportError, OSError):
+        resource_process = None
 
     async def sweep_expiry():
+        last_retention = 0.0
         while True:
             try:
                 await asyncio.to_thread(responses.expire)
+                if time.monotonic() - last_retention >= 60:
+                    await asyncio.to_thread(evidence.prune)
+                    last_retention = time.monotonic()
             except Exception:
                 LOG.exception("response_expiry_failed")
             await asyncio.sleep(1)
@@ -221,9 +237,9 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
                 worker.last_error = type(exc).__name__
                 LOG.error("model_load_failed error_type=%s", type(exc).__name__)
                 evidence.audit("system", "model.load_failed", "active_model", {"error_type": type(exc).__name__})
-        if worker.engine is not None:
+        if worker.engine is not None and getattr(worker.engine, "model", None) is not None:
             metadata = getattr(worker.engine.model, "metadata", {})
-            evidence.register_model(metadata)
+            evidence.register_model(metadata, getattr(worker.engine.model, "artifact_sha256", None))
             LOG.info("service_started model_version=%s simulated_training=%s auth_mode=%s response_mode=simulation",
                      metadata.get("version", "unavailable"), metadata.get("simulated_training"), "loopback_demo" if auth.demo else "configured_tokens")
         worker.start()
@@ -243,8 +259,16 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
     app.state.store, app.state.responses, app.state.worker, app.state.auth = evidence, responses, worker, auth
     viewer, analyst, admin = auth.require("viewer"), auth.require("analyst"), auth.require("admin")
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError):
+        # Avoid reflecting arbitrary payloads and non-finite inputs into error JSON.
+        details = [{key: error[key] for key in ("loc", "msg", "type") if key in error} for error in exc.errors()]
+        return JSONResponse({"detail": details}, status_code=422)
+
     def detailed_health():
         engine_health = worker.engine.health() if worker.engine is not None else {"status": "unavailable", "model": "unavailable"}
+        if worker.engine is None or getattr(worker.engine, "model", None) is None:
+            engine_health = {**engine_health, "status": "unavailable", "model": "unavailable"}
         database = evidence.health()
         inference_queue = worker.health()
         return {"status": "healthy" if engine_health.get("status") not in {"unavailable", "error", "degraded"} and database["status"] == "healthy" and inference_queue["status"] == "healthy" and not worker.last_error else "degraded",
@@ -281,6 +305,10 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
     def identity(user=Depends(viewer)):
         return {"role": user["role"], "mode": "loopback_demo" if auth.demo else "configured_tokens"}
 
+    @app.get("/api/openapi.json", include_in_schema=False)
+    def openapi_document(user=Depends(viewer)):
+        return app.openapi()
+
     @app.get("/api/overview")
     def overview(user=Depends(viewer)):
         result = evidence.overview()
@@ -306,11 +334,17 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
     @app.get("/api/models")
     def models(user=Depends(viewer)):
         metadata = getattr(worker.engine.model, "metadata", {}) if worker.engine else {}
-        return {"items": evidence.models(), "active_version": metadata.get("version"), "available": worker.engine is not None}
+        return {"items": evidence.models(), "active_version": metadata.get("version"),
+                "active_id": metadata.get("id"), "active_training_fingerprint": metadata.get("training_fingerprint"),
+                "active_artifact_sha256": getattr(worker.engine.model, "artifact_sha256", None) if worker.engine else None,
+                "available": worker.engine is not None and getattr(worker.engine, "model", None) is not None}
 
     @app.get("/api/behavior")
     def behavior(user=Depends(viewer)):
-        return {"items": worker.engine.behavior.snapshot() if worker.engine else []}
+        if worker.engine is None:
+            return {"items": []}
+        with worker.engine.lock:
+            return {"items": worker.engine.behavior.snapshot()}
 
     @app.get("/api/drift")
     def drift(user=Depends(viewer)):
@@ -318,13 +352,21 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
 
     @app.get("/api/metrics")
     def metrics(user=Depends(viewer)):
+        nonlocal resource_sampled_at
         overview = evidence.overview()
         total = overview["total_events"]
         try:
-            import psutil
-            process = psutil.Process()
-            resources = {"rss_bytes": process.memory_info().rss, "cpu_percent": process.cpu_percent(), "threads": process.num_threads()}
-        except (ImportError, OSError):
+            with resource_lock:
+                if resource_process is None:
+                    resources = {"status": "unavailable"}
+                else:
+                    now = time.monotonic()
+                    resources = {"rss_bytes": resource_process.memory_info().rss,
+                                 "cpu_percent": resource_process.cpu_percent(interval=None),
+                                 "cpu_sample_interval_seconds": round(now - resource_sampled_at, 3),
+                                 "threads": resource_process.num_threads()}
+                    resource_sampled_at = now
+        except Exception:
             resources = {"status": "unavailable"}
         return {"health": detailed_health(), "events_per_second": overview["events_per_second"],
                 "inference_latency_ms": overview["inference_latency_ms"], "queue_latency_ms": worker.queue_latency_ms,
@@ -390,7 +432,7 @@ def create_app(engine=None, db_path="var/aegisweave.db", model_path="var/models/
         from .detection import DetectionEngine
         try:
             model = await asyncio.to_thread(ModelBundle.load, Path(model_path))
-            evidence.register_model(model.metadata)
+            evidence.register_model(model.metadata, getattr(model, "artifact_sha256", None))
             if worker.engine is None:
                 worker.engine = DetectionEngine(model)
             else:

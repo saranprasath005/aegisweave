@@ -97,3 +97,21 @@ def test_rollback_is_not_repeatable_and_policy_persists(responder):
         responder.rollback(item["id"], "analyst:test", "Cancel again")
     responder.update_policy(Policy(min_risk=95), "admin:test")
     assert ResponseEngine(responder.store).policy.min_risk == 95
+
+
+def test_audit_failure_rolls_back_response_state_atomically(responder):
+    import sqlite3
+    item = responder.propose(add(responder), "analyst:test")
+    with responder.store.lock, responder.store.db:
+        responder.store.db.execute("CREATE TRIGGER fail_audit BEFORE INSERT ON audit BEGIN SELECT RAISE(ABORT, 'audit unavailable'); END")
+    with pytest.raises(sqlite3.IntegrityError):
+        responder.approve(item["id"], "analyst:test", "Approved after review")
+    assert responder.store.response(item["id"])["status"] == "pending_approval"
+
+
+def test_approval_obeys_shorter_current_policy_lease(responder):
+    item = responder.propose(add(responder), "analyst:test")
+    responder.update_policy(Policy(ttl_seconds=30), "admin:test")
+    approved = responder.approve(item["id"], "analyst:test", "Approved after review")
+    remaining = datetime.fromisoformat(approved["expires_at"]) - datetime.now(timezone.utc)
+    assert 0 < remaining.total_seconds() <= 30
