@@ -1,7 +1,7 @@
 {
   "experiment": "IoT-23 real Zeek traffic through the live AegisWeave pipeline",
   "simulated": false,
-  "generated_at": "2026-09-14T05:57:47.265514+00:00",
+  "generated_at": "2026-09-14T06:09:20.775263+00:00",
   "seed": 42,
   "warning": "IoT-23 is a set of 2018-2019 lab captures of a few IoT devices and malware samples on one research network. These measurements do not establish performance on other networks. Temporal-block tests share hosts and capture periods with training; leave-capture-out is the stronger generalization evidence.",
   "dataset": {
@@ -568,9 +568,20 @@
           "withheld classes absent from all fitting partitions",
           "duplicate flow vectors reported; test also scored on unseen vectors"
         ],
-        "passed": true
+        "passed": true,
+        "coverage_gaps": {
+          "calibration": [
+            "dos"
+          ],
+          "fusion": [
+            "dos"
+          ],
+          "tuning": [
+            "dos"
+          ]
+        }
       },
-      "fit_seconds": 20.834494700000505,
+      "fit_seconds": 22.524839099998644,
       "binary_all_test_rows": {
         "accuracy": 0.9900564740089091,
         "precision": 0.9951036500063589,
@@ -890,6 +901,10 @@
             "flows": 936,
             "correct_attribution": 934,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "attack_attempt": 934,
+              "unattributed": 2
+            },
             "flagged_rate": 1.0,
             "correct_attribution_rate": 0.9978632478632479,
             "wrong_attack_attribution_rate": 0.0
@@ -898,6 +913,10 @@
             "flows": 804,
             "correct_attribution": 802,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "normal": 2,
+              "command_and_control": 802
+            },
             "flagged_rate": 0.9975124378109452,
             "correct_attribution_rate": 0.9975124378109452,
             "wrong_attack_attribution_rate": 0.0
@@ -906,6 +925,14 @@
             "flows": 1773,
             "correct_attribution": 1633,
             "wrong_attack_attribution": 18,
+            "attributed_as": {
+              "normal": 1633,
+              "dos": 4,
+              "uncertain": 85,
+              "unattributed": 37,
+              "scan": 8,
+              "attack_attempt": 6
+            },
             "flagged_rate": 0.07896221094190636,
             "correct_attribution_rate": 0.9210377890580936,
             "wrong_attack_attribution_rate": 0.01015228426395939
@@ -914,6 +941,12 @@
             "flows": 1819,
             "correct_attribution": 1796,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "scan": 1796,
+              "unattributed": 15,
+              "normal": 4,
+              "uncertain": 4
+            },
             "flagged_rate": 0.9978009895547004,
             "correct_attribution_rate": 0.9873556899395272,
             "wrong_attack_attribution_rate": 0.0
@@ -947,8 +980,8 @@
           "scan"
         ],
         "latency_ms": {
-          "p50": 7.345699999859789,
-          "p95": 8.485979998658877,
+          "p50": 7.576099997095298,
+          "p95": 8.719090002341545,
           "samples": 5332
         },
         "definitions": {
@@ -956,7 +989,7 @@
           "wrong_attack_attribution": "analyst-facing label is a known attack class that differs from the true label"
         }
       },
-      "batch_components_and_fusion_ms_per_flow": 0.005558326654616896
+      "batch_components_and_fusion_ms_per_flow": 0.005793015302052555
     },
     "B_open_set_withheld_attack_attempt": {
       "split": {
@@ -1386,9 +1419,20 @@
           "withheld classes absent from all fitting partitions",
           "duplicate flow vectors reported; test also scored on unseen vectors"
         ],
-        "passed": true
+        "passed": true,
+        "coverage_gaps": {
+          "calibration": [
+            "dos"
+          ],
+          "fusion": [
+            "dos"
+          ],
+          "tuning": [
+            "dos"
+          ]
+        }
       },
-      "fit_seconds": 18.948303499993926,
+      "fit_seconds": 18.276742300004116,
       "binary_all_test_rows": {
         "accuracy": 0.9800849905876652,
         "precision": 0.9987453561884899,
@@ -1708,6 +1752,10 @@
             "flows": 936,
             "correct_attribution": 0,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "unattributed": 935,
+              "normal": 1
+            },
             "flagged_rate": 0.9989316239316239,
             "correct_attribution_rate": 0.0,
             "wrong_attack_attribution_rate": 0.0
@@ -1716,6 +1764,10 @@
             "flows": 804,
             "correct_attribution": 802,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "normal": 2,
+              "command_and_control": 802
+            },
             "flagged_rate": 0.9975124378109452,
             "correct_attribution_rate": 0.9975124378109452,
             "wrong_attack_attribution_rate": 0.0
@@ -1724,6 +1776,12 @@
             "flows": 1773,
             "correct_attribution": 1631,
             "wrong_attack_attribution": 8,
+            "attributed_as": {
+              "normal": 1631,
+              "unattributed": 48,
+              "uncertain": 86,
+              "scan": 8
+            },
             "flagged_rate": 0.08009024252679076,
             "correct_attribution_rate": 0.9199097574732092,
             "wrong_attack_attribution_rate": 0.0045121263395375075
@@ -1732,6 +1790,11 @@
             "flows": 1819,
             "correct_attribution": 1797,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "scan": 1797,
+              "unattributed": 19,
+              "normal": 3
+            },
             "flagged_rate": 0.9983507421660253,
             "correct_attribution_rate": 0.9879054425508521,
             "wrong_attack_attribution_rate": 0.0
@@ -1764,8 +1827,8 @@
           "scan"
         ],
         "latency_ms": {
-          "p50": 7.334050002100412,
-          "p95": 8.424345002276823,
+          "p50": 7.055800000671297,
+          "p95": 7.919650000985712,
           "samples": 5332
         },
         "definitions": {
@@ -1773,7 +1836,7 @@
           "wrong_attack_attribution": "analyst-facing label is a known attack class that differs from the true label"
         }
       },
-      "batch_components_and_fusion_ms_per_flow": 0.004713225728310062,
+      "batch_components_and_fusion_ms_per_flow": 0.004720564553734777,
       "ablation_without_class_support": {
         "decision_counts": {
           "attack_attempt": {
@@ -1810,6 +1873,10 @@
             "flows": 936,
             "correct_attribution": 0,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "unattributed": 935,
+              "uncertain": 1
+            },
             "flagged_rate": 1.0,
             "correct_attribution_rate": 0.0,
             "wrong_attack_attribution_rate": 0.0
@@ -1818,6 +1885,10 @@
             "flows": 804,
             "correct_attribution": 802,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "normal": 2,
+              "command_and_control": 802
+            },
             "flagged_rate": 0.9975124378109452,
             "correct_attribution_rate": 0.9975124378109452,
             "wrong_attack_attribution_rate": 0.0
@@ -1826,6 +1897,12 @@
             "flows": 1773,
             "correct_attribution": 1623,
             "wrong_attack_attribution": 8,
+            "attributed_as": {
+              "unattributed": 56,
+              "normal": 1623,
+              "uncertain": 86,
+              "scan": 8
+            },
             "flagged_rate": 0.08460236886632821,
             "correct_attribution_rate": 0.9153976311336718,
             "wrong_attack_attribution_rate": 0.0045121263395375075
@@ -1834,6 +1911,12 @@
             "flows": 1819,
             "correct_attribution": 1797,
             "wrong_attack_attribution": 0,
+            "attributed_as": {
+              "scan": 1797,
+              "unattributed": 16,
+              "normal": 3,
+              "uncertain": 3
+            },
             "flagged_rate": 0.9983507421660253,
             "correct_attribution_rate": 0.9879054425508521,
             "wrong_attack_attribution_rate": 0.0
@@ -1866,8 +1949,8 @@
           "scan"
         ],
         "latency_ms": {
-          "p50": 6.906850001541898,
-          "p95": 7.887590004247613,
+          "p50": 6.892850000440376,
+          "p95": 7.639480003490462,
           "samples": 5332
         },
         "definitions": {
@@ -2243,9 +2326,21 @@
           "withheld classes absent from all fitting partitions",
           "duplicate flow vectors reported; test also scored on unseen vectors"
         ],
-        "passed": true
+        "passed": true,
+        "coverage_gaps": {
+          "calibration": [
+            "dos"
+          ],
+          "fusion": [
+            "command_and_control",
+            "dos"
+          ],
+          "tuning": [
+            "dos"
+          ]
+        }
       },
-      "fit_seconds": 20.96285280000302,
+      "fit_seconds": 20.08210909999616,
       "binary_all_test_rows": {
         "accuracy": 0.9690073872802921,
         "precision": 0.9574938861069058,
@@ -2515,6 +2610,9 @@
             "flows": 1000,
             "correct_attribution": 0,
             "wrong_attack_attribution": 1000,
+            "attributed_as": {
+              "scan": 1000
+            },
             "flagged_rate": 1.0,
             "correct_attribution_rate": 0.0,
             "wrong_attack_attribution_rate": 1.0
@@ -2523,6 +2621,12 @@
             "flows": 2000,
             "correct_attribution": 908,
             "wrong_attack_attribution": 260,
+            "attributed_as": {
+              "unattributed": 357,
+              "normal": 908,
+              "dos": 260,
+              "uncertain": 475
+            },
             "flagged_rate": 0.546,
             "correct_attribution_rate": 0.454,
             "wrong_attack_attribution_rate": 0.13
@@ -2556,8 +2660,8 @@
           "scan"
         ],
         "latency_ms": {
-          "p50": 7.535799999459414,
-          "p95": 8.941419994880556,
+          "p50": 7.166150000557536,
+          "p95": 8.103130001109093,
           "samples": 3000
         },
         "definitions": {
@@ -2565,13 +2669,13 @@
           "wrong_attack_attribution": "analyst-facing label is a known attack class that differs from the true label"
         }
       },
-      "batch_components_and_fusion_ms_per_flow": 0.0043532308739825274
+      "batch_components_and_fusion_ms_per_flow": 0.004016625626066892
     }
   },
   "performance": {
-    "wall_seconds": 502.95348309999827,
-    "cpu_seconds": 497.921875,
-    "process_rss_bytes_at_end": 704958464,
+    "wall_seconds": 509.28323770000134,
+    "cpu_seconds": 502.5,
+    "process_rss_bytes_at_end": 713830400,
     "platform": "Windows-11-10.0.26200-SP0",
     "threads": 1
   }

@@ -83,6 +83,22 @@ def test_flow_unlike_every_known_class_names_no_nearest_class():
     assert attribute(result, "anomalous", DetectionConfig())["nearest_supported_class"] == "scan"
 
 
+def test_attack_class_without_support_calibration_is_never_attributed():
+    # Real corpora can leave a rare class with no held-out calibration flows (IoT-23 DoS).
+    result = evidence(anomaly={"score": .2})
+    result["attribution"] = {"support_percentile": None, "class_support": {"normal": .4, "scan": .3}}
+    decision = decide(result, DetectionConfig())
+    attributed = attribute(result, decision, DetectionConfig())
+    assert decision == "suspicious" and attributed["label"] == "unattributed"
+    assert "no held-out calibration flows" in attributed["statement"]
+    novel = evidence()
+    novel["attribution"] = {"support_percentile": None, "class_support": {"normal": .4}}
+    assert decide(novel, DetectionConfig()) == "anomalous"
+    assert "cannot be verified" in attribute(novel, "anomalous", DetectionConfig())["statement"]
+    # Artifacts without any class-support layer keep their previous behaviour.
+    assert decide(evidence(anomaly={"score": .2}), DetectionConfig()) == "malicious"
+
+
 def test_supported_confident_attack_is_attributed():
     result = supported(.4)
     assert decide(result, DetectionConfig()) == "malicious"

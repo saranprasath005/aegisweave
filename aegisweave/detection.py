@@ -60,15 +60,19 @@ NORMAL_LABELS = {"normal", "benign"}
 def _signals(result: dict, config: DetectionConfig) -> dict:
     prediction, anomaly, behavior = result["prediction"], result["anomaly"], result["behavior"]
     label = str(prediction.get("class", "unknown")).lower()
-    support = (result.get("attribution") or {}).get("support_percentile")
+    attribution = result.get("attribution") or {}
+    support = attribution.get("support_percentile")
+    # A model with class-support estimates but none for this attack class (too few held-out
+    # calibration flows) cannot verify the attribution; it is never treated as supported.
+    unverifiable = bool(attribution.get("class_support")) and support is None and label not in NORMAL_LABELS
     return {"label": label, "score": bounded(result["fusion"].get("score")),
             "confidence": bounded(prediction.get("confidence")),
             "reliability": bounded(result["fusion"].get("reliability")),
             "novelty": bounded(anomaly.get("score")) >= config.anomaly_threshold,
             "deviation": bool(behavior.get("available", True)) and bounded(behavior.get("deviation")) >= config.behavior_threshold,
             "predicted_normal": label in NORMAL_LABELS,
-            "support": None if support is None else bounded(support, 1.0),
-            "unsupported": support is not None and bounded(support, 1.0) > config.attribution_percentile}
+            "support": None if support is None else bounded(support, 1.0), "unverifiable": unverifiable,
+            "unsupported": unverifiable or (support is not None and bounded(support, 1.0) > config.attribution_percentile)}
 
 
 def decide(result: dict, config: DetectionConfig) -> str:
@@ -120,7 +124,9 @@ def attribute(result: dict, decision: str, config: DetectionConfig) -> dict:
         statement = f"Known attack pattern '{model_class}': fused score {s['score']:.3f}, class confidence {s['confidence']:.3f}, within training support{support_text}."
     elif decision == "anomalous":
         status, label = "withheld_novel", "unattributed"
-        if outside_all:
+        if s["unverifiable"]:
+            reason = f"the classifier's label '{model_class}' has no held-out calibration flows, so it cannot be verified"
+        elif outside_all:
             reason = f"outside the training support of every known class, including the classifier's label '{model_class}'{support_text}"
         elif s["unsupported"]:
             reason = f"outside the training support of the classifier's label '{model_class}'{support_text}"
@@ -132,8 +138,13 @@ def attribute(result: dict, decision: str, config: DetectionConfig) -> dict:
         statement = f"Suspicious activity resembling '{model_class}'{support_text}; evidence is below the known-attack threshold."
     elif decision == "suspicious":
         status, label = "withheld_no_supported_class", "unattributed"
-        statement = ("Suspicious activity; the classifier's label is outside that class's training support, so no attack type is attributed."
-                     if s["unsupported"] else "Suspicious activity from fused or behavioral evidence; the flow classifier did not identify a known attack class.")
+        if s["unverifiable"]:
+            statement = (f"Suspicious activity; the classifier's label '{model_class}' has no held-out calibration flows to verify "
+                         "its training support, so no attack type is attributed.")
+        elif s["unsupported"]:
+            statement = "Suspicious activity; the classifier's label is outside that class's training support, so no attack type is attributed."
+        else:
+            statement = "Suspicious activity from fused or behavioral evidence; the flow classifier did not identify a known attack class."
     else:
         status, label = "withheld_uncertain", "uncertain"
         reasons = []

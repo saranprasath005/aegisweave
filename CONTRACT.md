@@ -63,6 +63,9 @@ Decisions: normal | suspicious | anomalous | malicious | unknown.
 - anomalous: anomaly >= anomaly_threshold AND (outside predicted class support, or classifier says normal without support data). "Attack type uncertain".
 - unknown: reliability < minimum_reliability, low-confidence attack evidence, or contradicting layers (explicit abstention).
 - suspicious: detected/deviating below the known-attack bar; an unsupported class is never malicious.
+- A model with class-support estimates but none for the predicted attack class (no held-out calibration flows) cannot verify
+  the attribution: it is treated as unsupported (never malicious; statement says it cannot be verified). Artifacts without any
+  class-support layer keep the pre-support behaviour.
 - normal: no corroborated evidence; class confidence is not required.
 attribution (engine output) adds {status: attributed|tentative|withheld_novel|withheld_no_supported_class|withheld_uncertain|not_applicable,
 label: class|unattributed|uncertain|normal, statement, support_threshold, nearest_supported_class (null unless some class supports the flow), outside_all_known_classes}.
