@@ -96,5 +96,16 @@ const response = data => ({ok:true,json:async()=>data});
   assert.match(run(`eventTable([{event_id:'safe',source:'<script>alert(1)</script>',attribution:{label:'unknown_behavior'},prediction:{class:'dos'},fusion:{decision:'anomalous'}}])`), /&lt;script&gt;/);
   assert.match(run(`eventTable([{event_id:'safe',attribution:{label:'unknown_behavior'},prediction:{class:'dos'},fusion:{decision:'anomalous'}}])`), /Unknown Behavior/);
   assert.match(run(`trendChart([{timestamp:'2026-09-14T00:00:00Z',anomalous:3}])`), /Anomalous: 3/);
+
+  // Real-data artifacts show their own escaped provenance warning and cross-capture evidence.
+  run(`state.data={models:{items:[{version:'1.1.0',simulated_training:false,metrics:{},provenance:{warning:'<b>lab</b> captures'},evaluation:{protocol:'temporal_blocks',leave_capture_out_binary:{f1:.4321,false_positive_rate:.05}}}]}}`);
+  const realModel = run('analyticsView()');
+  assert.match(realModel, /&lt;b&gt;lab&lt;\/b&gt; captures/);
+  assert.match(realModel, /Cross-capture F1 \(held-out captures\)<\/dt><dd>0\.432/);
+  run(`state.data={models:{items:[{version:'1.1.0',simulated_training:false,metrics:{},evaluation:{protocol:'temporal_blocks',leave_capture_out_binary:{status:'not_evaluable'}}}]}}`);
+  assert.match(run('analyticsView()'), /Cross-capture F1 \(held-out captures\)<\/dt><dd>Not evaluable/);
+  run(`state.data={models:{items:[{version:'1.1.0',simulated_training:false,metrics:{f1:.8771,false_positive_rate:.1},evaluation:{protocol:'leave_capture_out',held_out_captures:['capture-a']}}]}}`);
+  assert.match(run('analyticsView()'), /Cross-capture F1 \(held-out captures\)<\/dt><dd>0\.877/);
+  assert.match(run('analyticsView()'), /Held-out captures<\/dt><dd>capture-a/);
   console.log('Frontend regressions passed: metric precision, drift counts, role controls, health, stale refresh, response reasons, safe rendering.');
 })().catch(error => { console.error(error); process.exitCode=1; });

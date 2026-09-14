@@ -5,22 +5,24 @@ AegisWeave scores network **flows** with several complementary ML layers. It sep
 evidence, correlates alerts into incidents, and routes any response through a policy engine
 that **only simulates** actions.
 
-> **Status: demo / research.** The deployable model is trained on *synthetic* traffic, and it says
-> so in every event (`model.simulated_training: true`). The real-data results below come from an
-> offline UNSW-NB15 benchmark on reduced counters. No result here establishes real-world
-> detection performance. No live containment adapter exists.
+> **Status: research.** Two kinds of model artifact exist, and every event says which one scored it
+> (`model.simulated_training`, `model.dataset`). The default demo model (`var/models/active`) is trained on
+> *synthetic* traffic. The IoT-23 models (`var/models/iot23`, `var/models/iot23-lco`) are trained on *real*
+> labeled Zeek traffic from a 2018–2019 lab network. They transfer poorly to an unseen network (see results).
+> No result here establishes performance on your network. No live containment adapter exists.
 
 ## Architecture
 
 ```
-Zeek conn.log JSON ─┐
-normalized JSONL ───┼─► POST /api/telemetry[/batch]  (pydantic Flow: strict, no labels, no asset priority)
-synthetic replay ───┘            │
+Zeek conn.log (TSV or JSON) ─┐   collectors.py: exact handling of unset fields, bad records skipped and reported
+normalized JSONL ────────────┼─► POST /api/telemetry[/batch]  (pydantic Flow: strict, no labels, no asset priority)
+synthetic replay ────────────┘            │
                                  ▼
                   bounded queue ─► single ordered inference worker            api.py
                                  ▼
 DetectionEngine.process                                                       detection.py
- ├─ BehaviorEngine: causal 5/30/60/300 s host windows (never learns from live data)  behavior.py
+ ├─ BehaviorEngine: event-time 5/30/60/300 s host windows; flows up to 300 s out of order are
+ │                  re-sequenced (Zeek emits connections when they end); never learns from live data   behavior.py
  ├─ ModelBundle.predict                                                       ml.py
  │   ├─ supervised   GradientBoosting, 5 classes, temperature-scaled
  │   ├─ anomaly      benign-only IsolationForest → percentile vs held-out benign
@@ -83,9 +85,39 @@ Other commands:
 | `python -m aegisweave serve [--host --port --model --db --config]` | API + dashboard, no replay |
 | `python -m aegisweave generate-demo out.jsonl --count 500` | write simulated normalized flows |
 | `python -m aegisweave replay out.jsonl` | forward normalized JSONL to the API |
+| `python -m aegisweave replay conn.log --format zeek-tsv --sensor lab1 --batch-size 200` | forward Zeek's default TSV `conn.log` in batches (honors rate limits, skips unrepresentable records) |
 | `python -m aegisweave replay conn.json --format zeek --sensor lab1` | forward Zeek `conn.log` (JSON) |
 | `python -m experiments.run --model var/models/active` | full synthetic evaluation and retrain (~40 s) |
+| `python -m experiments.confirm` | frozen synthetic model on fresh synthetic draws, no refitting |
+| `python -m experiments.iot23 --model var/models/iot23 --model-lco var/models/iot23-lco` | real IoT-23 training + evaluation, 3 protocols (~8 min first run) |
 | `python -m experiments.public --train var/datasets/UNSW_NB15_training-set.csv --test var/datasets/UNSW_NB15_testing-set.csv` | UNSW-NB15 benchmark + open-set test (~35 s) |
+
+API reference and backend operations: [docs/API.md](docs/API.md).
+
+### Real traffic: IoT-23
+
+IoT-23 (S. Garcia, A. Parmisano, M. J. Erquiaga, Stratosphere Laboratory, 2020, https://www.stratosphereips.org/datasets-iot23)
+provides labeled Zeek `conn.log` files. The experiment reads every `*.conn.log.labeled` file in `var/datasets/iot23/`
+(git-ignored). The results below used these eight files from
+`https://mcfp.felk.cvut.cz/publicDatasets/IoT-23-Dataset/IndividualScenarios/<capture>/bro/conn.log.labeled`, saved as
+`<capture>.conn.log.labeled`; SHA-256 hashes are recorded in the results file:
+CTU-IoT-Malware-Capture-1-1, 3-1, 8-1, 34-1, 42-1, 44-1 and CTU-Honeypot-Capture-4-1, 5-1 (≈178 MB).
+
+Replay the two captures the leave-capture-out model never saw through the live API:
+
+```bash
+.venv/Scripts/python -m aegisweave serve --port 8791 --model var/models/iot23-lco --db var/iot23-unseen-demo.db
+```
+
+```bash
+.venv/Scripts/python -m aegisweave replay var/datasets/iot23/CTU-Honeypot-Capture-5-1.conn.log.labeled --format zeek-tsv --sensor honeypot-5-1 --batch-size 200 --url http://127.0.0.1:8791
+```
+
+```bash
+.venv/Scripts/python -m aegisweave replay var/datasets/iot23/CTU-IoT-Malware-Capture-8-1.conn.log.labeled --format zeek-tsv --sensor capture-8-1 --batch-size 200 --url http://127.0.0.1:8791
+```
+
+The label columns in these research logs are ignored by the collector; only measured counters reach the model.
 
 Environment variables: `AEGISWEAVE_ADMIN_TOKEN`, `AEGISWEAVE_ANALYST_TOKEN`, `AEGISWEAVE_VIEWER_TOKEN`
 (≥ 24 chars, distinct; setting any enables token auth), `AEGISWEAVE_TOKEN` (for `replay` to a
@@ -113,17 +145,25 @@ Detection thresholds and asset importance: copy `config/detection.example.json` 
 .venv/Scripts/python -m pytest -p no:cacheprovider
 ```
 
-The run takes about 16 s. **96 tests** cover schema and injection rejection, decision/attribution/risk rules, a real
-trained model (manifest tamper detection, output contract, identity-field invariance, recomputable explanations, missing
-measurements, split leakage, class-support behaviour, withheld attack family never given a known type, held-out
-decision quality), API authz/CSRF/perimeter/bounds, storage retention and correlation, response safety (allowlist,
-IPv4-mapped bypass, kill switch, rate limits, expiry, approval re-checks), collectors, and a full end-to-end pipeline
-through the API, including dashboard asset serving and verified model reload.
+The run takes about 20 s. **134 tests** cover:
+- schema and injection rejection; decision, attribution and risk rules
+- a real trained model: manifest tamper detection, output contract, identity-field invariance, recomputable explanations,
+  missing measurements, split leakage, class-support behaviour, a withheld attack family never given a known type,
+  held-out decision quality, model lineage
+- API authz/CSRF/perimeter/bounds, OpenAPI auth, future-timestamp rejection; storage retention, migrations and correlation
+- response safety: allowlist, IPv4-mapped bypass, kill switch, rate limits, expiry, approval re-checks, atomic audit
+- per-sensor drift isolation; Zeek TSV parsing and exact unset-field handling; event-time reordering of out-of-order flows
+- the IoT-23 corpus pipeline on an IoT-23-format fixture (label mapping, exclusion accounting, split guarantees, real-data provenance)
+- a full end-to-end pipeline through the API, including dashboard asset serving and verified model reload
 
-Live end-to-end verification against real server processes (85 checks across 19 stages: validation, every ML layer,
-behaviour windows, novel-traffic attribution, batch/API/CLI/Zeek ingestion, storage, incidents, risk invariants, response
-policy with approval/allowlist/kill switch/lease expiry, audit, drift, model reload, dashboard, restart persistence,
-token RBAC, fail-closed startup), about 1 minute:
+Frontend rendering and refresh-race regressions (Node, no dependencies):
+
+```bash
+node frontend/check-ui.cjs
+```
+
+Live end-to-end verification against real server processes: 88 checks across 19 stages, including Zeek TSV batch replay
+with an unrepresentable record. It takes about 1 minute; all input flows are constructed fixtures:
 
 ```bash
 .venv/Scripts/python scripts/verify_pipeline.py

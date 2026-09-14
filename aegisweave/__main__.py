@@ -29,14 +29,16 @@ def parser():
     train = sub.add_parser("train-demo", help="Fit and save a synthetic research model")
     train.add_argument("--model", type=Path, default=DEFAULT_MODEL)
     train.add_argument("--seed", default=42, type=int)
-    replay = sub.add_parser("replay", help="Forward normalized JSONL or Zeek conn.log JSON to the authenticated telemetry API")
+    replay = sub.add_parser("replay", help="Forward normalized JSONL or Zeek conn.log (JSON or default TSV) to the authenticated telemetry API")
     replay.add_argument("file", type=Path)
-    replay.add_argument("--format", choices=["normalized", "zeek"], default="normalized")
+    replay.add_argument("--format", choices=["normalized", "zeek", "zeek-tsv"], default="normalized",
+                        help="zeek = conn.log JSON lines; zeek-tsv = Zeek's default tab-separated conn.log")
     replay.add_argument("--sensor", default="zeek-local")
     replay.add_argument("--url", default="http://127.0.0.1:8765")
     replay.add_argument("--follow", action="store_true", help="Follow appended lines until interrupted")
     replay.add_argument("--interval", type=float, default=0, help="Seconds between submitted flows")
     replay.add_argument("--simulated", action="store_true", help="Label every input as simulated, for constructed sensor fixtures or exercises")
+    replay.add_argument("--batch-size", type=int, default=1, help="Flows per request (1-200); batches use /api/telemetry/batch")
     export = sub.add_parser("generate-demo", help="Write explicitly simulated normalized JSONL")
     export.add_argument("output", type=Path)
     export.add_argument("--count", default=120, type=int)
@@ -111,7 +113,8 @@ def main():
         print(f"Wrote {args.count} simulated flows to {args.output}")
     elif args.command == "replay":
         from aegisweave.collectors import forward
-        forward(args.file, args.url, args.format, args.sensor, args.follow, args.interval, force_simulated=args.simulated)
+        forward(args.file, args.url, args.format, args.sensor, args.follow, args.interval, force_simulated=args.simulated,
+                batch_size=args.batch_size)
 
 
 if __name__ == "__main__":

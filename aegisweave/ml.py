@@ -410,10 +410,22 @@ def create_splits(seed=42, scale=1.) -> dict[str, MatrixSet]:
             for i, (name, count) in enumerate(sizes.items())}
 
 
+SYNTHETIC_DATASET = {"id_prefix": "aegisweave-synthetic", "name": "AegisWeave synthetic independent host episodes v1",
+                     "simulated": True, "status": "demo-only", "implementation_files": ("demo.py",),
+                     "provenance": {"generator": "aegisweave.demo.generate_episodes",
+                                    "warning": "Synthetic evaluation validates implementation only; it is not real-world efficacy."}}
+
+
 @threadpool_limits.wrap(limits=1)
-def fit_bundle(parts: dict[str, MatrixSet], seed=42) -> ModelBundle:
+def fit_bundle(parts: dict[str, MatrixSet], seed=42, dataset: dict | None = None, isolation: dict | None = None) -> ModelBundle:
+    """Fit every layer on train/calibration/fusion/tuning partitions.
+
+    Synthetic episodes (the default) must pass the strict disjoint-episode check.
+    Real corpora supply their own protocol-specific leakage report and provenance.
+    """
     start = perf_counter()
-    isolation = check_split_isolation(parts)
+    dataset = {**SYNTHETIC_DATASET, **(dataset or {})}
+    isolation = isolation if isolation is not None else check_split_isolation(parts)
     train, calibration, fusion, tuning = (parts[key] for key in ("train", "calibration", "fusion", "tuning"))
     bundle = ModelBundle()
     bundle.supervised = GradientBoostingClassifier(n_estimators=65, learning_rate=.075, max_depth=2,
@@ -451,18 +463,18 @@ def fit_bundle(parts: dict[str, MatrixSet], seed=42) -> ModelBundle:
         bundle.thresholds[name] = choose_threshold(tuning.binary, bundle.score_components(tuned, name))
     importances = bundle.supervised.feature_importances_
     implementation = {name: hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
-                      for name in ("ml.py", "features.py", "behavior.py", "demo.py")}
+                      for name in ("ml.py", "features.py", "behavior.py", *dataset["implementation_files"])}
     identity = hashlib.sha256(json.dumps({"implementation": implementation, "seed": seed, "sklearn": sklearn.__version__}, sort_keys=True).encode())
     for partition in (train, calibration, fusion, tuning):
         identity.update(partition.flow.astype("<f8").tobytes())
         identity.update(partition.behavior.astype("<f8").tobytes())
         identity.update(partition.labels.astype("U").tobytes())
     fingerprint = identity.hexdigest()
-    bundle.metadata = {"id": f"aegisweave-synthetic-{seed}-{fingerprint[:12]}", "version": MODEL_VERSION,
+    bundle.metadata = {"id": f"{dataset['id_prefix']}-{seed}-{fingerprint[:12]}", "version": MODEL_VERSION,
                        "training_fingerprint": fingerprint, "implementation_sha256": implementation,
-                       "dataset": "AegisWeave synthetic independent host episodes v1", "simulated_training": True,
+                       "dataset": dataset["name"], "simulated_training": bool(dataset["simulated"]),
                        "feature_schema": FEATURE_SCHEMA, "trained_at": datetime.now(timezone.utc).isoformat(),
-                       "training_seconds": perf_counter() - start, "status": "demo-only",
+                       "training_seconds": perf_counter() - start, "status": dataset["status"],
                        "training_rows": len(train.labels), "leakage_checks": isolation,
                        "feature_importance": [{"feature": f, "importance": float(v), "method": "training impurity (global)"}
                                               for f, v in sorted(zip(FLOW_FEATURES, importances), key=lambda pair: -pair[1])],
@@ -471,8 +483,7 @@ def fit_bundle(parts: dict[str, MatrixSet], seed=42) -> ModelBundle:
                        "hyperparameters": {"supervised": bundle.supervised.get_params(), "temporal": bundle.temporal_model.get_params(),
                                            "anomaly": bundle.anomaly_model.get_params(), "fusion_C": .5},
                        "versions": {"python": platform.python_version(), "sklearn": sklearn.__version__, "numpy": np.__version__},
-                       "provenance": {"generator": "aegisweave.demo.generate_episodes", "seed": seed,
-                                      "warning": "Synthetic evaluation validates implementation only; it is not real-world efficacy."}}
+                       "provenance": {**dataset["provenance"], "seed": seed}}
     return bundle
 
 
@@ -501,8 +512,9 @@ def evaluate_decisions(bundle, part: MatrixSet, config=None) -> dict:
         attributed = attribute(result, decision, config)["label"]
         latencies.append((perf_counter() - start) * 1000)
         counts.setdefault(label, dict.fromkeys(DECISIONS, 0))[decision] += 1
-        stats = per_label.setdefault(label, {"flows": 0, "correct_attribution": 0, "wrong_attack_attribution": 0})
+        stats = per_label.setdefault(label, {"flows": 0, "correct_attribution": 0, "wrong_attack_attribution": 0, "attributed_as": {}})
         stats["flows"] += 1
+        stats["attributed_as"][attributed] = stats["attributed_as"].get(attributed, 0) + 1
         stats["correct_attribution"] += attributed == label
         stats["wrong_attack_attribution"] += attributed in known_attacks and attributed != label
     for label, stats in per_label.items():

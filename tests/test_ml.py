@@ -135,7 +135,11 @@ def test_prediction_is_deterministic_and_late_events_get_no_history(bundle):
     engine = DetectionEngine(bundle)
     now = datetime(2026, 5, 1, tzinfo=timezone.utc)
     first = engine.process(measured_flow(timestamp=now, event_id="first"))
-    late = engine.process(measured_flow(timestamp=now - timedelta(seconds=30), event_id="late"))
+    reordered = engine.process(measured_flow(timestamp=now - timedelta(seconds=30), event_id="reordered"))
+    assert reordered["behavior"]["context"]["reordered"] is True and reordered["behavior"]["context"]["late_event"] is False
+    # Only earlier-starting flows count as prior context, so the later "first" flow is excluded.
+    assert reordered["behavior"]["context"]["history_count"] == 0
+    late = engine.process(measured_flow(timestamp=now - timedelta(seconds=301), event_id="late"))
     assert late["behavior"]["context"]["late_event"] is True and late["behavior"]["available"] is False
     again = bundle.predict(measured_flow(), {"available": False, "history_count": 0})
     assert again == bundle.predict(measured_flow(), {"available": False, "history_count": 0})

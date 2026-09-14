@@ -8,22 +8,37 @@ Frontend agent owns `frontend/` only (vanilla HTML/CSS/JS, served by FastAPI).
 ## Telemetry (schema.Flow Pydantic model)
 event_id: str (UUID default), timestamp: timezone-aware datetime, source: IP string, destination: IP string,
 source_port: int (0..65535), destination_port: int, protocol: TCP|UDP|ICMP|OTHER,
-duration: float seconds >= 0, packets: int >= 1, bytes: int >= 0,
-reverse_packets: int >= 0 = 0, reverse_bytes: int >= 0 = 0,
+duration: float seconds >= 0, packets: int >= 0, bytes: int >= 0,
+reverse_packets: int >= 0 = 0, reverse_bytes: int >= 0 = 0, with packets + reverse_packets >= 1 (responder-only records are valid; packetless records are not),
 failed: bool = False, syn_ratio: float [0,1] = 0,
 sensor_id: safe str = local, simulated: bool = False.
 packets/bytes are FORWARD counters, reverse_* are additional responder counters.
 missing_features: list of syn_ratio|failed|reverse_packets|reverse_bytes, default auto records omitted optional measurements; frozen training-median imputation plus reliability discount.
 No labels accepted by telemetry. IPs/timestamps/IDs/simulation flags never enter classifier features.
 
+## Collectors
+`zeek_to_flow(record, sensor_id)` accepts Zeek conn records from JSON or `read_zeek_tsv` (Zeek's default ASCII log, including IoT-23's
+space-joined label columns). Unset fields are omitted, then: duration unset only for single-packet connections -> 0; unset payload bytes ->
+0 for zero packets or a single TCP packet, or UDP/ICMP IP length minus fixed IPv4/IPv6 + 8-byte headers; anything else is refused.
+Label columns are never read into telemetry. `replay --format normalized|zeek|zeek-tsv [--batch-size 1..200]` skips and reports
+unrepresentable records, honors 429 Retry-After, and summarizes {accepted, rejected, already_ingested}.
+
 ## BehaviorEngine
-`observe(flow: Flow) -> dict` prior context + current flow, bounded causal windows [5,30,60,300] seconds. Does not learn baseline from untrusted inference.
+`observe(flow: Flow) -> dict` event-time prior context (flows that started no later than this one) + current flow, bounded windows [5,30,60,300] seconds. Does not learn baseline from untrusted inference.
+`max_lateness` (default 300 s, Zeek's TCP inactivity timeout): sensors emit connections when they end, so flows up to this far behind the stream watermark
+are inserted in event-time order (`reordered: true`); older flows are isolated (`late_event: true`, no history) and never alter history.
+In-order streams produce identical context for any tolerance unless a host reaches the per-host event cap.
 `snapshot() -> list[dict]` host observations for dashboard.
 `reset()` clears history.
 Context includes numeric `connections_5s`, `connections_30s`, `unique_destinations_30s`, `unique_ports_30s`, `failed_ratio_30s`, `bytes_30s`, `destination_entropy`, `new_edge`, `history_count`, `temporal_consistency` (recent elevated events if supported; otherwise explain definition), plus explanation evidence.
 
 ## ML ModelBundle
 `train_demo(path: Path, seed: int = 42) -> ModelBundle` explicitly synthetic fallback.
+`fit_bundle(parts, seed, dataset=None, isolation=None)`: default = synthetic episodes with the strict disjoint-episode check; real corpora pass
+dataset provenance ({id_prefix,name,simulated,status,implementation_files,provenance}) and their protocol-specific leakage report.
+`aegisweave.corpus` (IoT-23): `load_capture` streams labeled Zeek logs through the serving collector + BehaviorEngine in arrival order;
+`build_split(captures, "temporal_blocks"|"leave_capture_out", held_out=, withheld_classes=)` -> CorpusSplit{parts, unseen_test, decision_sample, report}.
+Unmapped labels are refused; unrepresentable records, boundary purges, rare classes and duplicate flow vectors are reported.
 `ModelBundle.load(path: Path)` trusted local artifact only; validate manifest hash before deserialize.
 `bundle.predict(flow: Flow, context: dict) -> dict`:
 prediction: {class, confidence, probabilities, entropy}, anomaly: {score, is_anomalous, contributions: list},

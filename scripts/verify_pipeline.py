@@ -233,6 +233,21 @@ def main() -> int:
         replay = cli("replay", str(jsonl), "--url", server.url)
         check(stage, "replay CLI forwarded normalized JSONL", replay.returncode == 0 and last_json(replay.stdout).get("accepted") == 50,
               replay.stderr[-300:] if replay.returncode else "accepted=50")
+        # Zeek's default TSV output with single-packet probes (unset duration/bytes) and one
+        # bad-checksum record with no counted packets, forwarded in batches.
+        tsv = RUN / "conn.log"
+        header = ("#separator \\x09\n#unset_field\t-\n#empty_field\t(empty)\n"
+                  "#fields\tts\tuid\tid.orig_h\tid.orig_p\tid.resp_h\tid.resp_p\tproto\tduration\torig_bytes\tresp_bytes\tconn_state\thistory\torig_pkts\torig_ip_bytes\tresp_pkts\tresp_ip_bytes\n"
+                  "#types\ttime\tstring\taddr\tport\taddr\tport\tenum\tinterval\tcount\tcount\tstring\tstring\tcount\tcount\tcount\tcount\n")
+        body = "".join(f"{1767200000 + i * .4:.6f}\tCtsv{i}\t10.203.0.7\t{41000 + i}\t172.22.{i}.9\t23\ttcp\t-\t-\t-\tS0\tS\t1\t60\t0\t0\n" for i in range(29))
+        body += "1767200020.000000\tCtsvbad\t10.203.0.7\t65279\t172.22.99.9\t80\ttcp\t-\t-\t-\tOTH\tC\t0\t0\t0\t0\n"
+        tsv.write_text(header + body, encoding="utf-8")
+        replay = cli("replay", str(tsv), "--format", "zeek-tsv", "--sensor", "zeek-tsv-verify", "--simulated", "--batch-size", "25", "--url", server.url)
+        summary = last_json(replay.stdout)
+        check(stage, "Zeek TSV replayed in batches; packetless record skipped, not fatal",
+              replay.returncode == 0 and summary.get("accepted") == 29 and summary.get("rejected") == 1, summary or replay.stderr[-300:])
+        probe = api.get("/api/events", params={"search": "10.203.0.7", "limit": 5}).json()["items"][0]
+        check(stage, "unset single-packet fields normalized exactly", probe["duration"] == 0 and probe["bytes"] == 0 and probe["packets"] == 1)
         rows = [{"ts": 1767225600.0 + i, "uid": f"Cverify{i}", "id.orig_h": "10.202.0.9", "id.resp_h": "172.20.3.3",
                  "id.orig_p": 40000 + i, "id.resp_p": 22, "proto": "tcp", "duration": .3, "orig_pkts": 5, "orig_bytes": 420,
                  "resp_pkts": 3, "resp_bytes": 380, "conn_state": "REJ" if i % 2 else "SF"} for i in range(6)]
@@ -248,7 +263,7 @@ def main() -> int:
 
         # 11. Storage, overview and incidents ---------------------------------------------------
         stage = "11 storage+incidents"
-        expected_total = 1 + 20 + 5 + 40 + 200 + 50 + 6
+        expected_total = 1 + 20 + 5 + 40 + 200 + 50 + 29 + 6
         overview = api.get("/api/overview").json()
         events = api.get("/api/events", params={"limit": 500}).json()["items"]
         check(stage, "every accepted flow stored once", overview["total_events"] == expected_total == len(events), f"{overview['total_events']} events")

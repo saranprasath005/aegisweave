@@ -20,7 +20,9 @@ class Flow(BaseModel):
     destination_port: int = Field(default=0, ge=0, le=65535, strict=True)
     protocol: Literal["TCP", "UDP", "ICMP", "OTHER"]
     duration: float = Field(ge=0, le=604800)
-    packets: int = Field(ge=1, le=10**10, strict=True)
+    # Forward packets may be zero for responder-only records (mid-stream pickup,
+    # asymmetric routing); at least one packet must be measured in some direction.
+    packets: int = Field(ge=0, le=10**10, strict=True)
     bytes: int = Field(ge=0, le=10**15, strict=True)
     reverse_packets: int = Field(default=0, ge=0, le=10**10, strict=True)
     reverse_bytes: int = Field(default=0, ge=0, le=10**15, strict=True)
@@ -39,6 +41,12 @@ class Flow(BaseModel):
             if isinstance(declared, list) and len(declared) <= 4 and all(isinstance(x, str) for x in declared):
                 value["missing_features"] = sorted(set(declared) | {name for name in ("syn_ratio", "failed", "reverse_packets", "reverse_bytes") if name not in value})
         return value
+
+    @model_validator(mode="after")
+    def measured_packets(self):
+        if self.packets + self.reverse_packets < 1:
+            raise ValueError("A flow needs at least one measured packet in either direction")
+        return self
 
     @field_validator("source", "destination")
     @classmethod
