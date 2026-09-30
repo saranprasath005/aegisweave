@@ -42,3 +42,16 @@ node frontend/check-ui.cjs
 The default dashboard is `http://127.0.0.1:8765`. Use `demo --count 200` for a safe synthetic replay, or `replay --format zeek-tsv` for recorded sensor telemetry. Add `--simulated` for constructed sensor fixtures. Response execution is a simulated ledger with approval, rollback, expiry, allowlists, rate limits and a kill switch. There is no live firewall or host-isolation adapter.
 
 Docker configuration is present but build/run remains unverified because Docker is not installed here. The deployed models need representative local calibration and additional independent evaluation before any operational security claim. Existing Word/PDF reports are preserved snapshots; this review and the latest verification JSON describe subsequent changes.
+
+
+## Evaluation separation correction — 16 September 2026
+
+`corpus.build_split` now rebuilds behavior features from verified source logs after partition assignment, boundary purging, and class exclusions. State (including watermarks) resets at each contiguous partition transition. Purged records, excluded rare classes, and withheld attack classes in fitting partitions cannot populate context. Serving-path decision samples are regenerated from the same isolated contexts, including for held-out captures selected at split time. Original `load_capture` arrays remain whole-capture replay diagnostics and are not used as fitting behavior inputs.
+
+Context-isolation metadata is version 2. Existing result files and model artifacts have not been regenerated or promoted. New IoT-23 CLI runs default to `experiments/results/iot23-context-v2.json`; the experiment explicitly records that this correction follows the original results. A new training/evaluation run is required before quoting revised model metrics.
+
+The 60-second purge is retained as an additional boundary exclusion, not as the isolation guarantee. Isolation comes from rebuilding eligible context separately. Interleaved temporal blocks still share hosts and capture environments, may contain repeated vectors, and are not a forward-only evaluation. Resets introduce cold starts. Whole-capture holdouts remain the stronger test of transfer; the revised split alone does not establish production readiness.
+
+Regression checks perturb test records and withheld-class records, compare all partition behavior matrices and serving samples against independent partition replay, exercise both protocols and purging, and reject changed source files.
+
+Validation after this correction: all 142 Python tests passed, including 16 corpus tests. Existing dependency deprecation warnings remain. No full-corpus retraining was performed in this change.

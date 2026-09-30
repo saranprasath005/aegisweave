@@ -38,6 +38,17 @@ class Auth:
         if len(set(self.tokens.values())) != len(self.tokens):
             raise ValueError("Each configured role must have a distinct token")
         self.demo = not self.tokens
+        self.public_origin = os.getenv("AEGISWEAVE_PUBLIC_ORIGIN", "").rstrip("/")
+        if self.public_origin:
+            try:
+                public = urlsplit(self.public_origin)
+                port = public.port
+                valid = (not self.demo and public.scheme == "https" and public.hostname and not public.username
+                         and not public.password and not public.path and not public.query and not public.fragment)
+            except ValueError:
+                valid = False
+            if not valid:
+                raise ValueError("AEGISWEAVE_PUBLIC_ORIGIN requires token auth and an HTTPS origin without path or credentials")
         self.session_token = secrets.token_urlsafe(48) if self.demo else None
         self.lock = threading.Lock()
         self.requests = OrderedDict()
@@ -57,7 +68,7 @@ class Auth:
             origin = request.headers.get("origin")
             if origin:
                 try:
-                    expected = urlsplit(str(request.base_url))
+                    expected = urlsplit(self.public_origin or str(request.base_url))
                     supplied = urlsplit(origin)
                 except ValueError as exc:
                     raise HTTPException(403, "Request Origin is invalid") from exc

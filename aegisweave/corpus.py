@@ -4,18 +4,22 @@ Records pass through the same Zeek collector and behaviour engine used in servin
 order a live sensor delivers them (Zeek writes a connection when it ends). Ground-truth
 labels are read only from the research columns and never enter telemetry or features.
 
-Split protocols (fixed before any model was trained on this corpus):
+Partition assignments (fixed before the original experiments; context isolation revised in v2):
 - temporal_blocks: each capture's records are cut into 20 contiguous arrival-order blocks
   mapped to partitions by a fixed interleaved pattern, so bursty attack phases remain
   testable without shuffling rows. Records within `gap_seconds` of a boundary between
   different partitions are purged.
 - leave_capture_out: whole captures are held out for testing; the other captures supply
   train/calibration/fusion/tuning blocks.
+
+For fitting and evaluation, build_split rebuilds behavior after assignment and exclusions,
+resetting all history and watermarks at each partition transition. load_capture retains
+whole-capture features only for replay diagnostics.
 """
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import hashlib
 from pathlib import Path
 import uuid
@@ -94,6 +98,8 @@ class Capture:
     excluded: dict
     reordered: int
     isolated: int
+    source_path: str = ""
+    max_lateness: float = 300.
     samples: dict = field(default_factory=dict)  # (protocol, label) -> list[(index, Flow, context)]
 
 
@@ -156,7 +162,7 @@ def load_capture(path: Path, *, held_out: bool, seed: int, reservoir: int = 2000
     if index + 1 != total:
         raise ValueError(f"{name}: counted {total} records but read {index + 1}")
     return Capture(name, file_sha256(path), flow_x, behavior_x, history, timestamp, labels, event_key, kept, block,
-                   dict(excluded), reordered, isolated, dict(samples))
+                   dict(excluded), reordered, isolated, str(path.resolve()), max_lateness, dict(samples))
 
 
 def purge_mask(capture: Capture, assignment: np.ndarray, gap_seconds: float) -> np.ndarray:
@@ -191,6 +197,49 @@ def assign(capture: Capture, protocol: str, held_out: set[str]) -> np.ndarray:
     raise ValueError(f"Unknown split protocol {protocol}")
 
 
+def _isolated_capture(capture, assignment, usable, protocol, seed, reservoir):
+    """Rebuild from verified source, with state confined to a contiguous partition run.
+
+    Unselected rows may supply context only within their own eligible partition.
+    Purged, rare, and withheld fitting rows never update state or its watermark.
+    Original whole-capture arrays remain available for historical replay comparisons.
+    """
+    path = Path(capture.source_path)
+    if not capture.source_path or not path.is_file() or file_sha256(path) != capture.sha256:
+        raise ValueError(f"{capture.name}: source missing or changed; reload the capture before splitting")
+    behavior = np.zeros_like(capture.behavior)
+    history = np.zeros_like(capture.history)
+    engine = BehaviorEngine(max_lateness=capture.max_lateness)
+    rng = np.random.default_rng([seed, int(hashlib.sha256(capture.name.encode()).hexdigest()[:8], 16)])
+    samples, seen = defaultdict(list), Counter()
+    previous = None
+    index = -1
+    for index, record in enumerate(read_zeek_tsv(path)):
+        partition = assignment[index]
+        if partition != previous:
+            engine.reset()
+            previous = partition
+        if not usable[index]:
+            continue
+        flow = zeek_to_flow(record, sensor_id=f"iot23-{capture.name}")
+        context = engine.observe(flow)
+        behavior[index] = behavior_features(context)
+        history[index] = _history_reliability(context)
+        if partition == "test":
+            key = (protocol, capture.labels[index])
+            seen[key] += 1
+            item = (index, flow, context)
+            if len(samples[key]) < reservoir:
+                samples[key].append(item)
+            else:
+                slot = int(rng.integers(0, seen[key]))
+                if slot < reservoir:
+                    samples[key][slot] = item
+    if index + 1 != len(assignment) or file_sha256(path) != capture.sha256:
+        raise ValueError(f"{capture.name}: source changed while rebuilding context")
+    return replace(capture, behavior=behavior, history=history, samples=dict(samples))
+
+
 def _rows_view(matrix: np.ndarray) -> np.ndarray:
     matrix = np.ascontiguousarray(matrix, dtype="<f8")
     return matrix.view(np.dtype((np.void, matrix.dtype.itemsize * matrix.shape[1]))).ravel()
@@ -210,6 +259,12 @@ class CorpusSplit:
 def build_split(captures: list[Capture], protocol: str, *, held_out=(), withheld_classes=(), caps=None,
                 seed=42, gap_seconds=60., min_train_rows=50, decision_rows_per_label=2000) -> CorpusSplit:
     from .ml import MatrixSet
+    if not np.isfinite(gap_seconds) or gap_seconds < 0:
+        raise ValueError("gap_seconds must be finite and nonnegative")
+    if decision_rows_per_label < 1:
+        raise ValueError("decision_rows_per_label must be positive")
+    if len({c.name for c in captures}) != len(captures):
+        raise ValueError("Capture names must be unique")
     caps = {**DEFAULT_CAPS, **(caps or {})}
     held_out, withheld_classes = set(held_out), set(withheld_classes)
     unknown = held_out - {c.name for c in captures}
@@ -254,6 +309,15 @@ def build_split(captures: list[Capture], protocol: str, *, held_out=(), withheld
     report["excluded_rare_classes"] = {label: int(available_train[label]) for label in rare}
     if "normal" in rare or trained["normal"] == 0:
         raise ValueError("The corpus needs benign training traffic")
+
+    # Feature construction happens only after eligibility and partition ownership are known.
+    isolated = []
+    for capture in captures:
+        assignment = assign(capture, protocol, held_out)
+        usable = capture.kept & ~purged_masks[capture.name] & ~np.isin(capture.labels, rare)
+        usable &= (assignment == "test") | ~np.isin(capture.labels, list(withheld_classes))
+        isolated.append(_isolated_capture(capture, assignment, usable, protocol, seed, decision_rows_per_label))
+    captures = isolated
 
     def matrix(p):
         chosen = [(captures[ci], label, idx) for ci, label, idx in selected[p] if label not in rare]
@@ -301,7 +365,7 @@ def build_split(captures: list[Capture], protocol: str, *, held_out=(), withheld
         "decision_sample": {"rows": len(labels), "class_counts": dict(Counter(labels)), "max_rows_per_label": decision_rows_per_label},
         "checks": ["documented label mapping only", "unrepresentable records excluded and counted",
                    "arrival-order blocks per capture" if protocol == "temporal_blocks" else "whole captures held out",
-                   "boundary purge in event time", "unique event identity", "withheld classes absent from all fitting partitions",
+                   "boundary purge in event time", "partition-local behavior rebuilt after exclusions", "unique event identity", "withheld classes absent from all fitting partitions",
                    "duplicate flow vectors reported; test also scored on unseen vectors"],
         "passed": True})
     for p in ("train", "calibration", "fusion", "tuning"):
@@ -312,10 +376,15 @@ def build_split(captures: list[Capture], protocol: str, *, held_out=(), withheld
     report["coverage_gaps"] = {p: sorted(trained_classes - set(parts[p].labels.tolist()) - {"normal"})
                                for p in ("calibration", "fusion", "tuning")}
     report["context_isolation"] = {
+        "version": 2,
+        "method": "rebuild eligible records with fresh state per contiguous partition run",
         "test_captures_disjoint_from_fitting": protocol == "leave_capture_out",
-        "all_fitting_partitions_have_independent_context": False,
+        "all_fitting_partitions_have_independent_context": True,
+        "test_context_independent_from_fitting": True,
+        "purged_records_excluded_from_context": True,
+        "withheld_classes_excluded_from_fitting_context": True,
         "behavior_window_seconds": 300,
         "purge_seconds": gap_seconds,
-        "warning": "Behavior features are constructed causally over each complete capture before partition assignment. Interleaved partitions can share unlabeled history; a boundary purge shorter than the behavior window cannot guarantee context isolation. Whole held-out captures isolate test context, but the internal calibration/fusion partitions still share capture context.",
+        "limitation": "Temporal blocks still share capture environments and hosts, and are interleaved rather than forward-only. State resets introduce cold starts. Context isolation does not prove cross-network generalization or eliminate repeated flow vectors.",
     }
     return CorpusSplit(parts, unseen, sample, report)

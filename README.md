@@ -13,6 +13,12 @@ that **only simulates** actions.
 
 Latest engineering findings and validation are recorded in [the continuation review](docs/CONTINUATION_REVIEW.md), including collector estimation assumptions and temporal-partition research limitations.
 
+Evaluation separation was corrected on 16 September: new IoT-23 runs rebuild partition-local behavior and write `experiments/results/iot23-context-v2.json` by default. The results below and existing model artifacts remain historical; they have not been re-evaluated under the corrected protocol.
+
+The corrected run is now complete in separate candidate artifacts. [Context-v2 model review](docs/MODEL_REVIEW_CONTEXT_V2.md) documents why they were not promoted. [Corrected CICIDS2017 baseline review](docs/CIC2017_BASELINE_REVIEW.md) covers the newly acquired 2.1-million-record corpus, capture-separated benchmarks, and the botnet detection gap. Historical tables below are unchanged.
+
+The agreed first deployment target is a single-site small office LAN (approximately 25–100 devices), with passive monitoring and human-reviewed alerts. [Production target and release gates](docs/PRODUCTION_TARGET.md) define the scope and remaining validation work; production readiness has not yet been demonstrated.
+
 ## Architecture
 
 ```
@@ -81,6 +87,10 @@ Start the dashboard with 200 replayed synthetic flows (loopback demo session, no
 Open http://127.0.0.1:8765. Run all commands from the repository root.
 
 Other commands:
+
+Continuous Zeek JSON ingestion is available with `python -m aegisweave collect`. See [collector setup and recovery limits](docs/COLLECTOR.md) for durable spooling, authentication, rotation requirements, and verification.
+
+Use `python -m aegisweave backup` and `restore` for consistent database snapshots and recovery to a new file. See [backup and recovery](docs/BACKUP.md).
 
 | Command | Purpose |
 |---|---|
@@ -291,6 +301,8 @@ inference worker.
 - SQL is fully parameterized. LIKE search escapes metacharacters.
 
 ## Deployment
+
+The agreed Linux/Docker office deployment candidate is documented in [deploy/README.md](deploy/README.md). It requires a supplied non-synthetic model and TLS configuration. Container build/run remains unverified. The root Compose example below is the historical synthetic demonstration deployment.
 
 ```bash
 AEGISWEAVE_ADMIN_TOKEN=$(python -c "import secrets;print(secrets.token_urlsafe(32))") docker compose up --build

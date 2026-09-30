@@ -4,7 +4,7 @@ Three fits, all through the serving collector/behaviour/feature code:
   A temporal_blocks        every class; the deployable research model (--model)
   B temporal_blocks        attack_attempt withheld from every fitting partition (open-set test)
   C leave_capture_out      captures 8-1 and honeypot 5-1 never used for fitting
-Protocol constants below were fixed before any IoT-23 result was observed.
+Partition constants predate the original results. Context isolation v2 is a later correction.
 """
 from __future__ import annotations
 
@@ -156,7 +156,8 @@ def run(paths, output: Path, seed=42, model_path: Path | None = None, cache_dir:
               "generated_at": datetime.now(timezone.utc).isoformat(), "seed": seed, "warning": WARNING, "dataset": IOT23,
               "protocol": {"held_out_captures": HELD_OUT, "withheld_classes": WITHHELD, "behaviour_reordering_tolerance_seconds": MAX_LATENESS,
                            "blocks_per_capture": 20, "boundary_purge_seconds": 60, "caps_per_capture_label": split.report["caps_per_capture_label"],
-                           "threshold_selection": "tuning partition only (FPR budget 0.05)", "fixed_before_results": True,
+                           "threshold_selection": "tuning partition only (FPR budget 0.05)", "partition_constants_fixed_before_original_results": True,
+                           "context_isolation_version": 2, "context_isolation_revised_after_original_results": True,
                            "corpus_cache_used": from_cache},
               "corpus": corpus, "experiments": experiments,
               "performance": {"wall_seconds": perf_counter() - started, "cpu_seconds": __import__("time").process_time() - cpu,
@@ -174,7 +175,7 @@ def run(paths, output: Path, seed=42, model_path: Path | None = None, cache_dir:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--data", type=Path, default=Path("var/datasets/iot23"))
-    parser.add_argument("--output", type=Path, default=Path("experiments/results/iot23.json"))
+    parser.add_argument("--output", type=Path, default=Path("experiments/results/iot23-context-v2.json"))
     parser.add_argument("--model", type=Path, help="Save fit A as a verified deployable artifact, e.g. var/models/iot23")
     parser.add_argument("--model-lco", type=Path, help="Save fit C (never saw the held-out captures), e.g. var/models/iot23-lco, "
                                                        "for replaying truly unseen real traffic through the live API")

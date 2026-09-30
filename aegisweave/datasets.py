@@ -34,7 +34,7 @@ def _numeric(frame: pd.DataFrame, columns: list[str]) -> np.ndarray:
     missing = set(columns) - set(frame.columns)
     if missing:
         raise ValueError(f"Missing required dataset columns: {sorted(missing)}")
-    values = frame[columns].apply(pd.to_numeric, errors="raise").to_numpy(dtype=float)
+    values = frame[columns].apply(pd.to_numeric, errors="raise").to_numpy(dtype=float, copy=True)
     if not np.isfinite(values).all() or (values < 0).any():
         raise ValueError("Dataset contains missing, non-finite, or negative required counters; clean explicitly and record exclusions")
     if not np.equal(values[:, 1:], np.floor(values[:, 1:])).all():
@@ -84,10 +84,13 @@ def load_unsw(path: str | Path) -> BenchmarkData:
                    {"duration_unit": "seconds", "split_policy": "Preserve supplied designated training and testing files"})
 
 
-def load_cic(path: str | Path) -> BenchmarkData:
-    frame = pd.read_csv(path, encoding="utf-8-sig")
+def normalize_cic_columns(frame):
+    """Normalize known header variants without changing measurement semantics."""
+    frame = frame.copy()
     frame.columns = frame.columns.str.strip()
     aliases = {"Total Fwd Packets": "Total Fwd Packets", "Tot Fwd Pkts": "Total Fwd Packets",
+               "Total Fwd Packet": "Total Fwd Packets", "Total Bwd packets": "Total Backward Packets",
+               "Total Length of Fwd Packet": "Total Length of Fwd Packets", "Total Length of Bwd Packet": "Total Length of Bwd Packets",
                "Total Backward Packets": "Total Backward Packets", "Tot Bwd Pkts": "Total Backward Packets",
                "Total Length of Fwd Packets": "Total Length of Fwd Packets", "TotLen Fwd Pkts": "Total Length of Fwd Packets",
                "Total Length of Bwd Packets": "Total Length of Bwd Packets", "TotLen Bwd Pkts": "Total Length of Bwd Packets",
@@ -97,6 +100,11 @@ def load_cic(path: str | Path) -> BenchmarkData:
         raise ValueError("Ambiguous duplicate normalized CIC columns")
     if "Label" not in frame:
         raise ValueError("CIC CSV must include Label")
+    return frame
+
+
+def load_cic(path: str | Path) -> BenchmarkData:
+    frame = normalize_cic_columns(pd.read_csv(path, encoding="utf-8-sig"))
     values = _numeric(frame, ["Flow Duration", "Total Fwd Packets", "Total Length of Fwd Packets",
                               "Total Backward Packets", "Total Length of Bwd Packets"])
     values[:, 0] /= 1_000_000  # CICFlowMeter microseconds -> canonical seconds.

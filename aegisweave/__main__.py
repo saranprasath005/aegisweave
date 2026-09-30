@@ -23,6 +23,8 @@ def parser():
         p.add_argument("--model", type=Path, default=DEFAULT_MODEL)
         p.add_argument("--db", type=Path, default=Path("var/aegisweave.db"))
         p.add_argument("--config", type=Path, help="Trusted local detection thresholds and asset priorities JSON")
+        if name == "serve":
+            p.add_argument("--require-real-model", action="store_true", help="Refuse missing or synthetic-trained model artifacts")
         if name == "demo":
             p.add_argument("--count", default=160, type=int)
             p.add_argument("--seed", default=42, type=int)
@@ -39,6 +41,25 @@ def parser():
     replay.add_argument("--interval", type=float, default=0, help="Seconds between submitted flows")
     replay.add_argument("--simulated", action="store_true", help="Label every input as simulated, for constructed sensor fixtures or exercises")
     replay.add_argument("--batch-size", type=int, default=1, help="Flows per request (1-200); batches use /api/telemetry/batch")
+    collect = sub.add_parser("collect", help="Durably spool and forward Zeek JSON logs")
+    collect.add_argument("--source", required=True, help="Quoted glob including active and retained rotated JSON logs")
+    collect.add_argument("--spool", type=Path, default=Path("var/collector.db"))
+    collect.add_argument("--sensor", default="zeek-local")
+    collect.add_argument("--url", default="http://127.0.0.1:8765")
+    collect.add_argument("--once", action="store_true", help="One bounded intake/delivery cycle; nonzero if backlog or errors remain")
+    collect.add_argument("--poll-seconds", type=float, default=1.)
+    collect.add_argument("--max-pending", type=int, default=100000)
+    collect.add_argument("--simulated", action="store_true", help="Mark constructed fixtures as simulated")
+    collector_health = sub.add_parser("collector-health", help="Check collector status freshness, errors and backlog age")
+    collector_health.add_argument("--spool", type=Path, default=Path("var/collector.db"))
+    collector_health.add_argument("--max-age", type=float, default=120.)
+    collector_health.add_argument("--max-backlog-age", type=float, default=300.)
+    backup = sub.add_parser("backup", help="Create a consistent SQLite snapshot in a new directory")
+    backup.add_argument("--db", type=Path, default=Path("var/aegisweave.db"))
+    backup.add_argument("--output", type=Path, required=True)
+    restore = sub.add_parser("restore", help="Verify a snapshot and restore to a new, unused database path")
+    restore.add_argument("--backup", type=Path, required=True)
+    restore.add_argument("--output", type=Path, required=True)
     export = sub.add_parser("generate-demo", help="Write explicitly simulated normalized JSONL")
     export.add_argument("output", type=Path)
     export.add_argument("--count", default=120, type=int)
@@ -77,6 +98,8 @@ def main():
                 print("Training an explicitly synthetic model; no real-world performance is implied.", flush=True)
                 train_demo(args.model, seed=args.seed)
         model = ModelBundle.load(args.model) if args.model.exists() else None
+        if getattr(args, "require_real_model", False) and (model is None or model.metadata.get("simulated_training") is not False):
+            raise SystemExit("This deployment requires a verified, non-synthetic-trained model; no suitable artifact was supplied")
         if model is None:
             print(f"WARNING: no model at {args.model}; inference is unavailable until "
                   "`python -m aegisweave train-demo` (or a verified artifact) is placed there and reloaded.", flush=True)
@@ -111,6 +134,20 @@ def main():
             for flow in generate_demo(count=args.count, seed=args.seed):
                 handle.write(flow.model_dump_json() + "\n")
         print(f"Wrote {args.count} simulated flows to {args.output}")
+    elif args.command == "backup":
+        from aegisweave.backup import snapshot
+        print(json.dumps(snapshot(args.db, args.output), indent=2))
+    elif args.command == "restore":
+        from aegisweave.backup import restore
+        print(json.dumps(restore(args.backup, args.output), indent=2))
+    elif args.command == "collect":
+        from aegisweave.ingest import run
+        raise SystemExit(run(args.source, args.spool, args.sensor, args.url, args.once, args.poll_seconds, args.max_pending, args.simulated))
+    elif args.command == "collector-health":
+        from aegisweave.ingest import collector_health
+        result = collector_health(args.spool, args.max_age, args.max_backlog_age)
+        print(json.dumps(result))
+        raise SystemExit(0 if result["healthy"] else 1)
     elif args.command == "replay":
         from aegisweave.collectors import forward
         forward(args.file, args.url, args.format, args.sensor, args.follow, args.interval, force_simulated=args.simulated,

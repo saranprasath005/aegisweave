@@ -1,0 +1,661 @@
+{
+  "experiment": "CICIDS2017 corrected capture-separated numeric-counter baselines",
+  "simulated": false,
+  "generated_at": "2026-09-16T02:50:23.946871+00:00",
+  "seed": 42,
+  "protocol": {
+    "fit_days": [
+      "tuesday",
+      "wednesday"
+    ],
+    "calibration_day": "thursday",
+    "test_days": [
+      "friday",
+      "monday"
+    ],
+    "test_used_for_selection": false,
+    "cap_per_binary_class": 200000,
+    "fitting_rows": 378578,
+    "calibration_benign_unseen_rows": 237246,
+    "threshold_rule": "strictly above 99th percentile of independent benign calibration scores",
+    "attempted_policy": "benign per correction authors' recommendation"
+  },
+  "thresholds": {
+    "logistic": 0.9359763903349838,
+    "boosted_trees": 0.006710499425593753,
+    "benign_isolation": 0.669179348878514
+  },
+  "captures": {
+    "tuesday": {
+      "schema": "aegisweave.cic-staging.v1",
+      "created_at": "2026-09-16T02:45:23.129453+00:00",
+      "capture_id": "cic2017-improved-tuesday",
+      "source_file": "tuesday.csv",
+      "source_sha256": "e2a0a5b631dfc6b455cc9f9a88b944110637d70a7f74171473925f76f38b6b0c",
+      "source_encoding": "utf-8-sig",
+      "dataset_description": "https://www.unb.ca/cic/datasets/ids-2017.html",
+      "download_url": "https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/CICIDS2017_improved.zip",
+      "source_authenticity": "Acquisition URL and local hashes recorded; not independently authenticated by dataset authors",
+      "rows_read": 322078,
+      "rows_retained": 322078,
+      "rows_excluded": 0,
+      "exclusion_reason_counts": {},
+      "reason_counts_may_overlap": true,
+      "all_label_counts": {
+        "BENIGN": 315106,
+        "FTP-Patator - Attempted": 12,
+        "FTP-Patator": 3972,
+        "SSH-Patator": 2961,
+        "SSH-Patator - Attempted": 27
+      },
+      "retained_label_counts": {
+        "BENIGN": 315145,
+        "FTP-Patator": 3972,
+        "SSH-Patator": 2961
+      },
+      "attempted_flow_policy": "benign",
+      "attempted_rows": 39,
+      "attempted_retained_as_benign": 39,
+      "attempted_policy_source": "https://intrusion-detection.distrinet-research.be/CNS2022/Dataset_Download.html",
+      "output_file": "capture.csv",
+      "output_sha256": "e965eff55473f8175863f33f90949ea8f24657e22037ee869d932876b9807793",
+      "duration_unit": "microseconds (unchanged)",
+      "features": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "Total Length of Fwd Packets",
+        "Total Backward Packets",
+        "Total Length of Bwd Packets"
+      ],
+      "labels_reviewed": false,
+      "split_assigned": false,
+      "temporal_context_available": false,
+      "ready_for_live_model": false,
+      "limitations": [
+        "Only required numeric counters are validated; unused CIC features are omitted",
+        "No packet-length equivalence with Zeek payload counters is asserted",
+        "Capture identity is caller-supplied and requires provenance review",
+        "Labels are preserved except for the explicitly selected attempted-flow policy",
+        "Exact feature overlap must be audited after partition assignment",
+        "Malformed CSV structure fails staging instead of silently dropping rows"
+      ]
+    },
+    "wednesday": {
+      "schema": "aegisweave.cic-staging.v1",
+      "created_at": "2026-09-16T02:45:29.443639+00:00",
+      "capture_id": "cic2017-improved-wednesday",
+      "source_file": "wednesday.csv",
+      "source_sha256": "bf46c5f3c792e8817381f724511229569606918eaf07ac986d7a2592b6341bc2",
+      "source_encoding": "utf-8-sig",
+      "dataset_description": "https://www.unb.ca/cic/datasets/ids-2017.html",
+      "download_url": "https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/CICIDS2017_improved.zip",
+      "source_authenticity": "Acquisition URL and local hashes recorded; not independently authenticated by dataset authors",
+      "rows_read": 496641,
+      "rows_retained": 496641,
+      "rows_excluded": 0,
+      "exclusion_reason_counts": {},
+      "reason_counts_may_overlap": true,
+      "all_label_counts": {
+        "BENIGN": 319120,
+        "DoS Slowloris": 3859,
+        "DoS Slowloris - Attempted": 1847,
+        "DoS Slowhttptest": 1740,
+        "DoS Slowhttptest - Attempted": 3368,
+        "DoS Hulk": 158468,
+        "DoS Hulk - Attempted": 581,
+        "DoS GoldenEye": 7567,
+        "Heartbleed": 11,
+        "DoS GoldenEye - Attempted": 80
+      },
+      "retained_label_counts": {
+        "BENIGN": 324996,
+        "DoS Slowloris": 3859,
+        "DoS Slowhttptest": 1740,
+        "DoS Hulk": 158468,
+        "DoS GoldenEye": 7567,
+        "Heartbleed": 11
+      },
+      "attempted_flow_policy": "benign",
+      "attempted_rows": 5876,
+      "attempted_retained_as_benign": 5876,
+      "attempted_policy_source": "https://intrusion-detection.distrinet-research.be/CNS2022/Dataset_Download.html",
+      "output_file": "capture.csv",
+      "output_sha256": "855a4a8e5c58693d30e143bd9b6e3190de1af1e8031a66fa5bd0a965d8ed24c0",
+      "duration_unit": "microseconds (unchanged)",
+      "features": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "Total Length of Fwd Packets",
+        "Total Backward Packets",
+        "Total Length of Bwd Packets"
+      ],
+      "labels_reviewed": false,
+      "split_assigned": false,
+      "temporal_context_available": false,
+      "ready_for_live_model": false,
+      "limitations": [
+        "Only required numeric counters are validated; unused CIC features are omitted",
+        "No packet-length equivalence with Zeek payload counters is asserted",
+        "Capture identity is caller-supplied and requires provenance review",
+        "Labels are preserved except for the explicitly selected attempted-flow policy",
+        "Exact feature overlap must be audited after partition assignment",
+        "Malformed CSV structure fails staging instead of silently dropping rows"
+      ]
+    },
+    "thursday": {
+      "schema": "aegisweave.cic-staging.v1",
+      "created_at": "2026-09-16T02:45:19.036795+00:00",
+      "capture_id": "cic2017-improved-thursday",
+      "source_file": "thursday.csv",
+      "source_sha256": "78a4d11eaf473d099e30e71ddb01e0f38218e844c0a9cdd36602145d674af482",
+      "source_encoding": "utf-8-sig",
+      "dataset_description": "https://www.unb.ca/cic/datasets/ids-2017.html",
+      "download_url": "https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/CICIDS2017_improved.zip",
+      "source_authenticity": "Acquisition URL and local hashes recorded; not independently authenticated by dataset authors",
+      "rows_read": 362076,
+      "rows_retained": 362076,
+      "rows_excluded": 0,
+      "exclusion_reason_counts": {},
+      "reason_counts_may_overlap": true,
+      "all_label_counts": {
+        "BENIGN": 288172,
+        "Web Attack - Brute Force - Attempted": 1292,
+        "Web Attack - Brute Force": 73,
+        "Infiltration - Attempted": 45,
+        "Infiltration": 36,
+        "Infiltration - Portscan": 71767,
+        "Web Attack - XSS - Attempted": 655,
+        "Web Attack - XSS": 18,
+        "Web Attack - SQL Injection - Attempted": 5,
+        "Web Attack - SQL Injection": 13
+      },
+      "retained_label_counts": {
+        "BENIGN": 290169,
+        "Web Attack - Brute Force": 73,
+        "Infiltration": 36,
+        "Infiltration - Portscan": 71767,
+        "Web Attack - XSS": 18,
+        "Web Attack - SQL Injection": 13
+      },
+      "attempted_flow_policy": "benign",
+      "attempted_rows": 1997,
+      "attempted_retained_as_benign": 1997,
+      "attempted_policy_source": "https://intrusion-detection.distrinet-research.be/CNS2022/Dataset_Download.html",
+      "output_file": "capture.csv",
+      "output_sha256": "d4e6d29bb68ad28f091926b32f8767f748f9a155232a6ad30b6aeb6bffe5c938",
+      "duration_unit": "microseconds (unchanged)",
+      "features": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "Total Length of Fwd Packets",
+        "Total Backward Packets",
+        "Total Length of Bwd Packets"
+      ],
+      "labels_reviewed": false,
+      "split_assigned": false,
+      "temporal_context_available": false,
+      "ready_for_live_model": false,
+      "limitations": [
+        "Only required numeric counters are validated; unused CIC features are omitted",
+        "No packet-length equivalence with Zeek payload counters is asserted",
+        "Capture identity is caller-supplied and requires provenance review",
+        "Labels are preserved except for the explicitly selected attempted-flow policy",
+        "Exact feature overlap must be audited after partition assignment",
+        "Malformed CSV structure fails staging instead of silently dropping rows"
+      ]
+    },
+    "friday": {
+      "schema": "aegisweave.cic-staging.v1",
+      "created_at": "2026-09-16T02:45:09.885619+00:00",
+      "capture_id": "cic2017-improved-friday",
+      "source_file": "friday.csv",
+      "source_sha256": "ebd499e6f23bd59f9cb81bec28178491b02b925fa5640a24215c9437d79482d0",
+      "source_encoding": "utf-8-sig",
+      "dataset_description": "https://www.unb.ca/cic/datasets/ids-2017.html",
+      "download_url": "https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/CICIDS2017_improved.zip",
+      "source_authenticity": "Acquisition URL and local hashes recorded; not independently authenticated by dataset authors",
+      "rows_read": 547557,
+      "rows_retained": 547557,
+      "rows_excluded": 0,
+      "exclusion_reason_counts": {},
+      "reason_counts_may_overlap": true,
+      "all_label_counts": {
+        "BENIGN": 288544,
+        "Botnet - Attempted": 4067,
+        "Botnet": 736,
+        "Portscan": 159066,
+        "DDoS": 95144
+      },
+      "retained_label_counts": {
+        "BENIGN": 292611,
+        "Botnet": 736,
+        "Portscan": 159066,
+        "DDoS": 95144
+      },
+      "attempted_flow_policy": "benign",
+      "attempted_rows": 4067,
+      "attempted_retained_as_benign": 4067,
+      "attempted_policy_source": "https://intrusion-detection.distrinet-research.be/CNS2022/Dataset_Download.html",
+      "output_file": "capture.csv",
+      "output_sha256": "c00bdbced4bc01d6961b92a8e200b631437d4414e1097d86dc36965305e69889",
+      "duration_unit": "microseconds (unchanged)",
+      "features": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "Total Length of Fwd Packets",
+        "Total Backward Packets",
+        "Total Length of Bwd Packets"
+      ],
+      "labels_reviewed": false,
+      "split_assigned": false,
+      "temporal_context_available": false,
+      "ready_for_live_model": false,
+      "limitations": [
+        "Only required numeric counters are validated; unused CIC features are omitted",
+        "No packet-length equivalence with Zeek payload counters is asserted",
+        "Capture identity is caller-supplied and requires provenance review",
+        "Labels are preserved except for the explicitly selected attempted-flow policy",
+        "Exact feature overlap must be audited after partition assignment",
+        "Malformed CSV structure fails staging instead of silently dropping rows"
+      ]
+    },
+    "monday": {
+      "schema": "aegisweave.cic-staging.v1",
+      "created_at": "2026-09-16T02:45:14.649320+00:00",
+      "capture_id": "cic2017-improved-monday",
+      "source_file": "monday.csv",
+      "source_sha256": "51fe5dc962626efb4ae70dce0303072fb780da0932822b651202ee9c2fbc1aff",
+      "source_encoding": "utf-8-sig",
+      "dataset_description": "https://www.unb.ca/cic/datasets/ids-2017.html",
+      "download_url": "https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/CICIDS2017_improved.zip",
+      "source_authenticity": "Acquisition URL and local hashes recorded; not independently authenticated by dataset authors",
+      "rows_read": 371624,
+      "rows_retained": 371624,
+      "rows_excluded": 0,
+      "exclusion_reason_counts": {},
+      "reason_counts_may_overlap": true,
+      "all_label_counts": {
+        "BENIGN": 371624
+      },
+      "retained_label_counts": {
+        "BENIGN": 371624
+      },
+      "attempted_flow_policy": "benign",
+      "attempted_rows": 0,
+      "attempted_retained_as_benign": 0,
+      "attempted_policy_source": "https://intrusion-detection.distrinet-research.be/CNS2022/Dataset_Download.html",
+      "output_file": "capture.csv",
+      "output_sha256": "d3e180c78bdb4300cef76517a3f728332506d3acf3ac9f56873ca483533be81c",
+      "duration_unit": "microseconds (unchanged)",
+      "features": [
+        "Flow Duration",
+        "Total Fwd Packets",
+        "Total Length of Fwd Packets",
+        "Total Backward Packets",
+        "Total Length of Bwd Packets"
+      ],
+      "labels_reviewed": false,
+      "split_assigned": false,
+      "temporal_context_available": false,
+      "ready_for_live_model": false,
+      "limitations": [
+        "Only required numeric counters are validated; unused CIC features are omitted",
+        "No packet-length equivalence with Zeek payload counters is asserted",
+        "Capture identity is caller-supplied and requires provenance review",
+        "Labels are preserved except for the explicitly selected attempted-flow policy",
+        "Exact feature overlap must be audited after partition assignment",
+        "Malformed CSV structure fails staging instead of silently dropping rows"
+      ]
+    }
+  },
+  "results": {
+    "friday": {
+      "rows": 547557,
+      "unseen_vectors": 328025,
+      "models": {
+        "logistic": {
+          "all_rows": {
+            "accuracy": 0.7038609678992324,
+            "precision": 0.9751938302078106,
+            "recall": 0.37347124489107497,
+            "f1": 0.5400997779246305,
+            "false_positive_rate": 0.008277200788760505,
+            "false_negative_rate": 0.626528755108925,
+            "roc_auc": 0.9483969310552532,
+            "pr_auc": 0.9211344568758971,
+            "brier_score": 0.13421867065728543,
+            "threshold": 0.9359763903349838,
+            "confusion_matrix": {
+              "tn": 290189,
+              "fp": 2422,
+              "fn": 159731,
+              "tp": 95215
+            },
+            "samples": 547557
+          },
+          "unseen_vectors": {
+            "accuracy": 0.9847511622589742,
+            "precision": 0.9753137003841229,
+            "recall": 0.9734988293271443,
+            "f1": 0.9744054197879569,
+            "false_positive_rate": 0.010468338705053471,
+            "false_negative_rate": 0.026501170672855727,
+            "roc_auc": 0.9917317205731291,
+            "pr_auc": 0.9890021860510767,
+            "brier_score": 0.04808093266609241,
+            "threshold": 0.9359763903349838,
+            "confusion_matrix": {
+              "tn": 227808,
+              "fp": 2410,
+              "fn": 2592,
+              "tp": 95215
+            },
+            "samples": 328025
+          },
+          "per_label_detection": {
+            "botnet": {
+              "rows": 736,
+              "flagged": 8,
+              "flagged_rate": 0.010869565217391304
+            },
+            "ddos": {
+              "rows": 95144,
+              "flagged": 95123,
+              "flagged_rate": 0.9997792819305473
+            },
+            "normal": {
+              "rows": 292611,
+              "flagged": 2422,
+              "flagged_rate": 0.008277200788760505
+            },
+            "portscan": {
+              "rows": 159066,
+              "flagged": 84,
+              "flagged_rate": 0.0005280826826600279
+            }
+          }
+        },
+        "boosted_trees": {
+          "all_rows": {
+            "accuracy": 0.9895901248637128,
+            "precision": 0.9861894618571663,
+            "recall": 0.9915276176131416,
+            "f1": 0.9888513354926536,
+            "false_positive_rate": 0.012097973076883645,
+            "false_negative_rate": 0.008472382386858393,
+            "roc_auc": 0.995513015307974,
+            "pr_auc": 0.9948558858132541,
+            "brier_score": 0.2726436336301841,
+            "threshold": 0.006710499425593753,
+            "confusion_matrix": {
+              "tn": 289071,
+              "fp": 3540,
+              "fn": 2160,
+              "tp": 252786
+            },
+            "samples": 547557
+          },
+          "unseen_vectors": {
+            "accuracy": 0.9854096486548282,
+            "precision": 0.971665872283463,
+            "recall": 0.9796333595754905,
+            "f1": 0.9756333496252851,
+            "false_positive_rate": 0.012136322963452033,
+            "false_negative_rate": 0.020366640424509492,
+            "roc_auc": 0.9923899891173834,
+            "pr_auc": 0.9906709697574866,
+            "brier_score": 0.008087579147403112,
+            "threshold": 0.006710499425593753,
+            "confusion_matrix": {
+              "tn": 227424,
+              "fp": 2794,
+              "fn": 1992,
+              "tp": 95815
+            },
+            "samples": 328025
+          },
+          "per_label_detection": {
+            "botnet": {
+              "rows": 736,
+              "flagged": 0,
+              "flagged_rate": 0.0
+            },
+            "ddos": {
+              "rows": 95144,
+              "flagged": 95121,
+              "flagged_rate": 0.999758261162028
+            },
+            "normal": {
+              "rows": 292611,
+              "flagged": 3540,
+              "flagged_rate": 0.012097973076883645
+            },
+            "portscan": {
+              "rows": 159066,
+              "flagged": 157665,
+              "flagged_rate": 0.9911923352570631
+            }
+          }
+        },
+        "benign_isolation": {
+          "all_rows": {
+            "accuracy": 0.530481758063544,
+            "precision": 0.015384615384615385,
+            "recall": 0.00013336157460795619,
+            "f1": 0.00026443092908584674,
+            "false_positive_rate": 0.007436494185112658,
+            "false_negative_rate": 0.999866638425392,
+            "roc_auc": 0.9578951636551203,
+            "pr_auc": 0.9377388364614857,
+            "brier_score": 0.17822412378574934,
+            "threshold": 0.669179348878514,
+            "confusion_matrix": {
+              "tn": 290435,
+              "fp": 2176,
+              "fn": 254912,
+              "tp": 34
+            },
+            "samples": 547557
+          },
+          "unseen_vectors": {
+            "accuracy": 0.6964682569926073,
+            "precision": 0.018609742747673783,
+            "recall": 0.0003476233807396199,
+            "f1": 0.0006824979424694381,
+            "false_positive_rate": 0.007788270248199533,
+            "false_negative_rate": 0.9996523766192604,
+            "roc_auc": 0.9126423500561948,
+            "pr_auc": 0.6432964215193581,
+            "brier_score": 0.20615064486207202,
+            "threshold": 0.669179348878514,
+            "confusion_matrix": {
+              "tn": 228425,
+              "fp": 1793,
+              "fn": 97773,
+              "tp": 34
+            },
+            "samples": 328025
+          },
+          "per_label_detection": {
+            "botnet": {
+              "rows": 736,
+              "flagged": 33,
+              "flagged_rate": 0.04483695652173913
+            },
+            "ddos": {
+              "rows": 95144,
+              "flagged": 0,
+              "flagged_rate": 0.0
+            },
+            "normal": {
+              "rows": 292611,
+              "flagged": 2176,
+              "flagged_rate": 0.007436494185112658
+            },
+            "portscan": {
+              "rows": 159066,
+              "flagged": 1,
+              "flagged_rate": 6.28669860309557e-06
+            }
+          }
+        }
+      }
+    },
+    "monday": {
+      "rows": 371624,
+      "unseen_vectors": 305532,
+      "models": {
+        "logistic": {
+          "all_rows": {
+            "accuracy": 0.9930978623554991,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.006902137644500894,
+            "false_negative_rate": 0.0,
+            "roc_auc": null,
+            "pr_auc": null,
+            "brier_score": 0.05399543543328073,
+            "threshold": 0.9359763903349838,
+            "confusion_matrix": {
+              "tn": 369059,
+              "fp": 2565,
+              "fn": 0,
+              "tp": 0
+            },
+            "samples": 371624
+          },
+          "unseen_vectors": {
+            "accuracy": 0.9916473560870874,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.00835264391291256,
+            "false_negative_rate": 0.0,
+            "roc_auc": null,
+            "pr_auc": null,
+            "brier_score": 0.06381818900950446,
+            "threshold": 0.9359763903349838,
+            "confusion_matrix": {
+              "tn": 302980,
+              "fp": 2552,
+              "fn": 0,
+              "tp": 0
+            },
+            "samples": 305532
+          },
+          "per_label_detection": {
+            "normal": {
+              "rows": 371624,
+              "flagged": 2565,
+              "flagged_rate": 0.006902137644500894
+            }
+          }
+        },
+        "boosted_trees": {
+          "all_rows": {
+            "accuracy": 0.98282134630702,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.017178653692980002,
+            "false_negative_rate": 0.0,
+            "roc_auc": null,
+            "pr_auc": null,
+            "brier_score": 0.0008479898855742942,
+            "threshold": 0.006710499425593753,
+            "confusion_matrix": {
+              "tn": 365240,
+              "fp": 6384,
+              "fn": 0,
+              "tp": 0
+            },
+            "samples": 371624
+          },
+          "unseen_vectors": {
+            "accuracy": 0.9796486129112499,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.020351387088750113,
+            "false_negative_rate": 0.0,
+            "roc_auc": null,
+            "pr_auc": null,
+            "brier_score": 0.0010310103238095594,
+            "threshold": 0.006710499425593753,
+            "confusion_matrix": {
+              "tn": 299314,
+              "fp": 6218,
+              "fn": 0,
+              "tp": 0
+            },
+            "samples": 305532
+          },
+          "per_label_detection": {
+            "normal": {
+              "rows": 371624,
+              "flagged": 6384,
+              "flagged_rate": 0.017178653692980002
+            }
+          }
+        },
+        "benign_isolation": {
+          "all_rows": {
+            "accuracy": 0.9922852130110004,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.007714786988999634,
+            "false_negative_rate": 0.0,
+            "roc_auc": null,
+            "pr_auc": null,
+            "brier_score": 0.20596452477246993,
+            "threshold": 0.669179348878514,
+            "confusion_matrix": {
+              "tn": 368757,
+              "fp": 2867,
+              "fn": 0,
+              "tp": 0
+            },
+            "samples": 371624
+          },
+          "unseen_vectors": {
+            "accuracy": 0.9916473560870874,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "false_positive_rate": 0.00835264391291256,
+            "false_negative_rate": 0.0,
+            "roc_auc": null,
+            "pr_auc": null,
+            "brier_score": 0.2161255886098681,
+            "threshold": 0.669179348878514,
+            "confusion_matrix": {
+              "tn": 302980,
+              "fp": 2552,
+              "fn": 0,
+              "tp": 0
+            },
+            "samples": 305532
+          },
+          "per_label_detection": {
+            "normal": {
+              "rows": 371624,
+              "flagged": 2867,
+              "flagged_rate": 0.007714786988999634
+            }
+          }
+        }
+      }
+    }
+  },
+  "wall_seconds": 19.25581190001685,
+  "limitations": [
+    "Same experimental network across days; not an office-network pilot",
+    "Reduced numeric counters only; no behavior history or attack attribution",
+    "Byte-count equivalence with live Zeek counters is unverified",
+    "Calibration/test duplicate vectors are excluded only in separately reported unseen subsets",
+    "Isolation scores are not calibrated probabilities; their Brier score is descriptive only"
+  ],
+  "deployable_artifact": false
+}

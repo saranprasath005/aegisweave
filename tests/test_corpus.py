@@ -93,7 +93,7 @@ def test_split_guarantees_and_real_data_provenance(tmp_path):
     assert split.report["captures"]["CTU-Fixture-Capture-1-1"]["excluded_unrepresentable"] == {"dos: no measured packets": 13}
     assert len(split.unseen_test) == len(split.parts["test"].labels)
     assert split.report["context_isolation"]["test_captures_disjoint_from_fitting"] is False
-    assert split.report["context_isolation"]["all_fitting_partitions_have_independent_context"] is False
+    assert split.report["context_isolation"]["all_fitting_partitions_have_independent_context"] is True
     assert split.report["test_rows_unseen"] == int(split.unseen_test.sum())
     assert set(split.decision_sample.labels) == {"normal", "scan", "attack_attempt"}
     assert len(split.decision_sample.flows) == len(split.decision_sample.labels) <= 90
@@ -129,3 +129,90 @@ def test_held_out_captures_must_exist(tmp_path):
     captures = [load_capture(fixture(tmp_path), held_out=False, seed=1)]
     with pytest.raises(ValueError, match="not loaded"):
         build_split(captures, "leave_capture_out", held_out=("CTU-Missing",), seed=1)
+
+
+@pytest.mark.parametrize("perturb", ["test", "withheld"])
+def test_other_partitions_cannot_influence_fitting_context(tmp_path, perturb):
+    from aegisweave.corpus import BLOCKS
+    path = fixture(tmp_path, records=600)
+    original = load_capture(path, held_out=False, seed=7)
+    kwargs = dict(withheld_classes=("attack_attempt",), seed=7, gap_seconds=0, min_train_rows=10)
+    before = build_split([original], "temporal_blocks", **kwargs)
+    lines, index = [], 0
+    for line in path.read_text().splitlines(True):
+        if line.startswith("#"):
+            lines.append(line)
+            continue
+        fields = line.rstrip("\n").split("\t")
+        partition = BLOCK_PATTERN[min(BLOCKS - 1, index * BLOCKS // 600)]
+        target = partition == "test" if perturb == "test" else fields[-1] == "Attack"
+        if target:
+            # Extreme future timestamps used to poison the shared watermark, too.
+            fields[0] = str(float(fields[0]) + 100000)
+            fields[9] = "900000"
+            fields[4] = "203.0.113.99"
+        lines.append("\t".join(fields) + "\n")
+        index += 1
+    path.write_text("".join(lines))
+    after = build_split([load_capture(path, held_out=False, seed=7)], "temporal_blocks", **kwargs)
+    for partition in ("train", "calibration", "fusion", "tuning"):
+        for field in ("flow", "behavior", "history", "labels"):
+            np.testing.assert_array_equal(getattr(before.parts[partition], field), getattr(after.parts[partition], field))
+
+
+@pytest.mark.parametrize("protocol", ["temporal_blocks", "leave_capture_out"])
+def test_split_context_matches_independent_partition_replay(tmp_path, protocol):
+    from aegisweave.corpus import assign, purge_mask
+    paths = [fixture(tmp_path, records=600, name=f"capture-{i}") for i in range(2)]
+    # held_out at loading is deliberately false: build_split owns the actual protocol.
+    captures = [load_capture(p, held_out=False, seed=2) for p in paths]
+    held = {"capture-1"} if protocol == "leave_capture_out" else set()
+    split = build_split(captures, protocol, held_out=held, withheld_classes=("attack_attempt",),
+                        gap_seconds=5, min_train_rows=10, decision_rows_per_label=1000)
+    expected = {}
+    expected_rows = {}
+    for capture, path in zip(captures, paths):
+        assignment = assign(capture, protocol, held)
+        purged = purge_mask(capture, assignment, 5)
+        engine, previous = BehaviorEngine(), None
+        for i, record in enumerate(read_zeek_tsv(path)):
+            partition = assignment[i]
+            if previous != partition:
+                engine = BehaviorEngine()
+                previous = partition
+            if not capture.kept[i] or purged[i]:
+                continue
+            if partition != "test" and capture.labels[i] == "attack_attempt":
+                continue
+            flow = zeek_to_flow(record, sensor_id=f"iot23-{capture.name}")
+            context = engine.observe(flow)
+            expected[flow.event_id] = (partition, context)
+            expected_rows.setdefault((partition, capture.name, capture.labels[i]), []).append(context)
+    for partition, part in split.parts.items():
+        for capture in captures:
+            for label in set(part.labels):
+                mask = (part.episode_ids == capture.name) & (part.labels == label)
+                if not mask.any():
+                    continue
+                contexts = expected_rows[(partition, capture.name, label)]
+                np.testing.assert_array_equal(part.behavior[mask], [behavior_features(c) for c in contexts])
+                np.testing.assert_array_equal(part.history[mask],
+                    [float(c["available"]) * min(1., c["history_count"] / 8) for c in contexts])
+    sample = split.decision_sample
+    assert sample.flows
+    for i, (flow, context) in enumerate(zip(sample.flows, sample.contexts)):
+        partition, reference = expected[flow.event_id]
+        assert partition == "test"
+        assert context == reference
+        np.testing.assert_array_equal(sample.behavior[i], behavior_features(reference))
+        assert sample.history[i] == float(reference["available"]) * min(1., reference["history_count"] / 8)
+    if held:
+        assert set(sample.episode_ids) == held
+
+
+def test_split_refuses_changed_source(tmp_path):
+    path = fixture(tmp_path, records=600)
+    capture = load_capture(path, held_out=False, seed=1)
+    path.write_text(path.read_text() + "# changed\n")
+    with pytest.raises(ValueError, match="source missing or changed"):
+        build_split([capture], "temporal_blocks", gap_seconds=0, min_train_rows=10)
