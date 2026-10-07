@@ -5,19 +5,35 @@ AegisWeave scores network **flows** with several complementary ML layers. It sep
 evidence, correlates alerts into incidents, and routes any response through a policy engine
 that **only simulates** actions.
 
-> **Status: research.** Two kinds of model artifact exist, and every event says which one scored it
-> (`model.simulated_training`, `model.dataset`). The default demo model (`var/models/active`) is trained on
-> *synthetic* traffic. The IoT-23 models (`var/models/iot23`, `var/models/iot23-lco`) are trained on *real*
-> labeled Zeek traffic from a 2018–2019 lab network. They transfer poorly to an unseen network (see results).
-> No result here establishes performance on your network. No live containment adapter exists.
+> **Status: research prototype.** The software is complete and verified: 164 tests, 88/88 end-to-end checks and 8/8
+> collector recovery checks passed on 1 Oct 2026. The models are research candidates, not deployment-grade.
+>
+> - **Which model scored an event.** Two kinds of artifact exist, and every event says which one scored it
+>   (`model.simulated_training`, `model.dataset`).
+> - **Dashboard default.** The demo model (`var/models/active`) is trained on *synthetic* traffic.
+> - **IoT-23 models.** `var/models/iot23*` are trained on *real* labeled Zeek traffic from 2018–2019 lab networks. On captures
+>   never used for training, 10.27 % of benign flows cross the alert threshold, and command-and-control traffic is
+>   typed as `scan`. None has been promoted to the dashboard.
+> - **Not established.** No result here establishes performance on your network. There is no live Zeek sensor, no Docker run
+>   and no live containment adapter.
 
-Latest engineering findings and validation are recorded in [the continuation review](docs/CONTINUATION_REVIEW.md), including collector estimation assumptions and temporal-partition research limitations.
+**Start here:** the [project knowledge base](docs/PROJECT_KNOWLEDGE_BASE.md) explains the whole system for new team members:
+- architecture, data flow, datasets, features and models;
+- results, current status and limitations;
+- the roadmap and viva preparation.
 
-Evaluation separation was corrected on 16 September: new IoT-23 runs rebuild partition-local behavior and write `experiments/results/iot23-context-v2.json` by default. The results below and existing model artifacts remain historical; they have not been re-evaluated under the corrected protocol.
+Every claim in it carries a status tag and an evidence pointer.
 
-The corrected run is now complete in separate candidate artifacts. [Context-v2 model review](docs/MODEL_REVIEW_CONTEXT_V2.md) documents why they were not promoted. [Corrected CICIDS2017 baseline review](docs/CIC2017_BASELINE_REVIEW.md) covers the newly acquired 2.1-million-record corpus, capture-separated benchmarks, and the botnet detection gap. Historical tables below are unchanged.
+Other documents:
 
-The agreed first deployment target is a single-site small office LAN (approximately 25–100 devices), with passive monitoring and human-reviewed alerts. [Production target and release gates](docs/PRODUCTION_TARGET.md) define the scope and remaining validation work; production readiness has not yet been demonstrated.
+| Document | Contents |
+|---|---|
+| [Continuation review](docs/CONTINUATION_REVIEW.md) | Engineering findings, collector estimation assumptions |
+| [Context-v2 model review](docs/MODEL_REVIEW_CONTEXT_V2.md) | Corrected IoT-23 evaluation and why its models were not promoted |
+| [CICIDS2017 baseline review](docs/CIC2017_BASELINE_REVIEW.md) | Day-separated benchmark on the corrected 2.1-million-record corpus, including the botnet gap |
+| [Production target](docs/PRODUCTION_TARGET.md) | First deployment target (one small office LAN of about 25–100 devices, passive, human-reviewed) and its release gates |
+| [Lab validation plan](docs/LAB_VALIDATION.md) | Planned sensor, deployment and recovery checks |
+| [API](docs/API.md) · [Collector](docs/COLLECTOR.md) · [Backup](docs/BACKUP.md) · [Prototype demo](docs/PROTOTYPE_DEMO.md) | Operations references |
 
 ## Architecture
 
@@ -86,23 +102,32 @@ Start the dashboard with 200 replayed synthetic flows (loopback demo session, no
 
 Open http://127.0.0.1:8765. Run all commands from the repository root.
 
+On Windows you can instead double-click `START_PROTOTYPE.cmd`. It starts an isolated simulated demo on
+http://127.0.0.1:8775 with a fresh database, and reuses a demo that is already running.
+
 Other commands:
-
-Continuous Zeek JSON ingestion is available with `python -m aegisweave collect`. See [collector setup and recovery limits](docs/COLLECTOR.md) for durable spooling, authentication, rotation requirements, and verification.
-
-Use `python -m aegisweave backup` and `restore` for consistent database snapshots and recovery to a new file. See [backup and recovery](docs/BACKUP.md).
 
 | Command | Purpose |
 |---|---|
 | `python -m aegisweave serve [--host --port --model --db --config]` | API + dashboard, no replay |
+| `python -m aegisweave serve --require-real-model ...` | refuse missing or synthetic-trained models (deployment) |
+| `python -m aegisweave collect --source "/logs/conn*.log" --sensor office-gw` | durable, continuous Zeek JSON ingestion ([collector](docs/COLLECTOR.md)) |
+| `python -m aegisweave collector-health` | exit 0 only when the collector status is fresh, error-free and not backlogged |
+| `python -m aegisweave backup --output DIR` / `restore --backup DIR --output NEW.db` | verified SQLite snapshot; restore only to an unused path ([backup](docs/BACKUP.md)) |
 | `python -m aegisweave generate-demo out.jsonl --count 500` | write simulated normalized flows |
 | `python -m aegisweave replay out.jsonl` | forward normalized JSONL to the API |
 | `python -m aegisweave replay conn.log --format zeek-tsv --sensor lab1 --batch-size 200` | forward Zeek's default TSV `conn.log` in batches (honors rate limits, skips unrepresentable records) |
 | `python -m aegisweave replay conn.json --format zeek --sensor lab1` | forward Zeek `conn.log` (JSON) |
 | `python -m experiments.run --model var/models/active` | full synthetic evaluation and retrain (~40 s) |
 | `python -m experiments.confirm` | frozen synthetic model on fresh synthetic draws, no refitting |
-| `python -m experiments.iot23 --model var/models/iot23 --model-lco var/models/iot23-lco` | real IoT-23 training + evaluation, 3 protocols (~8 min first run) |
+| `python -m experiments.iot23 --model var/models/iot23-context-v2 --model-lco var/models/iot23-lco-context-v2` | real IoT-23 training + evaluation, 3 protocols, corrected context isolation (about 28 min); writes `iot23-context-v2.json` |
 | `python -m experiments.public --train var/datasets/UNSW_NB15_training-set.csv --test var/datasets/UNSW_NB15_testing-set.csv` | UNSW-NB15 benchmark + open-set test (~35 s) |
+| `python scripts/acquire_cic2017.py`, then `python -m experiments.prepare_cic ...` and `python -m experiments.cic_baseline` | corrected CICIDS2017 acquisition, staging and day-separated baseline ([review](docs/CIC2017_BASELINE_REVIEW.md) has exact arguments) |
+
+Datasets (`var/datasets/`, about 2 GB) and trained models (`var/models/`) are **not in Git**. Download the datasets from
+their sources: IoT-23 below; CICIDS2017 via the script above. For UNSW-NB15, the project copy came from a GitHub mirror
+(`Nir-J/ML-Projects`) because the official download timed out. It is hashed in `unsw.json` but not authenticated by the
+dataset authors, so prefer the official site when it is reachable.
 
 API reference and backend operations: [docs/API.md](docs/API.md).
 
@@ -157,7 +182,7 @@ Detection thresholds and asset importance: copy `config/detection.example.json` 
 .venv/Scripts/python -m pytest -p no:cacheprovider
 ```
 
-The run takes about 20 s. **137 tests** cover:
+The run takes about 25 s. **164 tests** cover:
 - schema and injection rejection; decision, attribution and risk rules
 - a real trained model: manifest tamper detection, output contract, identity-field invariance, recomputable explanations,
   missing measurements, split leakage, class-support behaviour, a withheld attack family never given a known type,
@@ -167,6 +192,8 @@ The run takes about 20 s. **137 tests** cover:
 - per-sensor drift isolation; Zeek TSV parsing and exact unset-field handling; event-time reordering of out-of-order flows
 - the IoT-23 corpus pipeline on an IoT-23-format fixture (label mapping, exclusion accounting, split guarantees, real-data provenance)
 - a full end-to-end pipeline through the API, including dashboard asset serving and verified model reload
+- the durable collector (spool transactions, rotation, duplicate acknowledgements, health), backup/restore,
+  deployment configuration (public origin, required real model), and CICIDS2017 staging and baseline
 
 Frontend rendering and refresh-race regressions (Node, no dependencies):
 
@@ -179,6 +206,12 @@ with an unrepresentable record. It takes about 1 minute; all input flows are con
 
 ```bash
 .venv/Scripts/python scripts/verify_pipeline.py
+```
+
+Collector recovery against a real API process: 8 checks covering an outage, restart, log rotation and duplicate batches:
+
+```bash
+.venv/Scripts/python scripts/verify_collector.py
 ```
 
 ## Measured results
@@ -230,7 +263,44 @@ dataset**; the confidence gate withholds 91 %. The support check's cost on known
 correct types withheld). On benign rows 15 % receive a confident attack type: a classifier false-positive problem on
 reduced counters.
 
-### IoT-23 (`experiments/results/iot23.json`; real labeled Zeek traffic through the live pipeline)
+### IoT-23, corrected evaluation (`experiments/results/iot23-context-v2.json`) — current figures
+
+On 16 Sep 2026 the split was corrected so that host-behaviour features are rebuilt separately inside each partition
+(context isolation v2), and purged or withheld records can no longer leak history. The resulting models are research
+candidates and were **not promoted**; see the [context-v2 review](docs/MODEL_REVIEW_CONTEXT_V2.md).
+
+| Protocol (binary) | Test rows | Precision | Recall | F1 | FPR | ROC-AUC |
+|---|---|---|---|---|---|---|
+| A. temporal blocks within captures | 107,306 | 0.995 | 0.988 | 0.991 | 0.72 % | 0.999 |
+| A, flow vectors never seen in fitting | 7,136 | 0.874 | 0.741 | **0.802** | **7.06 %** | 0.915 |
+| B. attack_attempt withheld from fitting | 107,306 | 0.999 | 0.967 | 0.983 | 0.21 % | 0.999 |
+| B, flow vectors never seen in fitting | 7,136 | 0.914 | 0.303 | 0.455 | 1.89 % | 0.820 |
+| C. captures 8-1 and honeypot 5-1 never used for fitting | 11,777 | 0.957 | 1.000 | 0.978 | **10.27 %** | 0.905 |
+
+Decision level (serving path, sampled flows):
+
+| Protocol | Result |
+|---|---|
+| A | 2.45 % of benign flows alert; 0.70 % are `malicious` |
+| B | **939 of 940 withheld flows → `anomalous`**, no invented type |
+| C | 24.70 % of benign flows alert and 8.20 % abstain; every sampled attack is typed `scan` (wrong); 24.20 % reach `malicious` |
+
+### CICIDS2017, corrected release (`experiments/results/cic2017-baseline-v1*.json`) — offline counter baseline
+
+Fit on Tuesday and Wednesday, threshold from Thursday benign flows, test on Friday and Monday. It uses 10 common counters,
+no behaviour context, and produces no deployable model.
+
+| Model | Friday attack recall | Friday benign FPR | Monday benign FPR |
+|---|---|---|---|
+| Logistic regression | 37.35 % | 0.83 % | 0.69 % |
+| Boosted trees | 99.15 % | 1.21 % | 1.72 % |
+| Benign IsolationForest | 0.013 % | 0.74 % | 0.77 % |
+
+The boosted trees' 99.15 % hides a complete miss: **0 of 736 botnet flows** were detected (DDoS 99.98 %, PortScan 99.12 %).
+
+### IoT-23, historical evaluation (`experiments/results/iot23.json`) — before the context correction
+
+The tables in this section predate context isolation v2 and are kept for traceability. Quote the corrected figures above.
 
 **Corpus.** 8 captures, 1,204,888 conn records, processed with the serving collector and behaviour engine in sensor
 arrival order.
@@ -273,7 +343,7 @@ What this shows, and does not show:
   0.53). All Hakai C&C is typed `scan`. The unseen honeypot's benign IoT devices mostly look anomalous. The C fusion partition
   contained no C&C rows, because 34-1's C&C is concentrated in time.
 
-**Live replay of the unseen captures** (C model served, `replay --format zeek-tsv`). Labels were joined back only for scoring:
+**Live replay of the unseen captures** (historical C model `var/models/iot23-lco` served, `replay --format zeek-tsv`). Labels were joined back only for scoring:
 
 | True traffic (every flow) | Flows | Decisions | Analyst-facing type |
 |---|---|---|---|
@@ -314,9 +384,13 @@ read-only root filesystem, no capabilities, and binds to 127.0.0.1. Put a TLS re
 
 ## Known limitations and TODOs
 
-- **Cross-network generalization is weak (IoT-23 protocol C).** A model trained on some lab captures raised alerts on 31 %
-  of an unseen network's benign flows and gave every flow from a new malware family the wrong type. A new site needs
-  locally collected benign traffic for calibration and retraining, then `experiments`-style evaluation and `/api/models/reload`.
+- **Cross-network generalization is weak (IoT-23 protocol C).** A model trained on some lab captures alerted on
+  24.7 % of an unseen network's sampled benign flows (30.9 % before the context correction). It gave every flow from a
+  new malware family the wrong type. A new site needs locally collected benign traffic for calibration and retraining,
+  then `experiments`-style evaluation and `/api/models/reload`.
+- **Botnet coverage.** The CICIDS2017 baseline detected 0 of 736 botnet flows.
+- **Evaluation caveats.** The held-out IoT-23 captures have now been inspected, so they are development data. A new
+  untouched test set is needed for final claims. Protocol A interleaves blocks within captures and is optimistic.
 - IoT-23 is a small lab corpus (a few devices and malware samples, 2018–2019). DoS has 135 usable flows and no
   validation coverage. The supervised layer leans on destination port.
 - The default demo model is synthetic-trained. UNSW-NB15 covers per-flow layers only, because its CSVs lack host identity and chronology.
@@ -326,5 +400,8 @@ read-only root filesystem, no capabilities, and binds to 127.0.0.1. Put a TLS re
 - Host behaviour windows live in memory only (bounded; last 300 s). After a restart the Behaviour page is empty and each
   host's first flows get discounted temporal evidence until new history accumulates. Stored events are unaffected.
 - Single-process design: one inference worker and SQLite. Horizontal scaling would need an external queue and database.
-- No live response adapters, SIEM/notification integrations, packet capture, or TLS termination.
+- No live response adapters, SIEM/notification integrations or packet capture. TLS termination and the Linux deployment
+  exist only as the unverified `deploy/` configuration. The collector is verified on files, not yet on a live Zeek sensor.
+- Containment approval needs only the analyst role; there is no two-person rule yet.
+- The dashboard's "Simulation workspace" banner is static (`frontend/index.html`), so it also appears for real replays.
 - `docs/PROJECT_ASSESSMENT.md` records the inherited state before this work. `CONTRACT.md` is the module/API contract.

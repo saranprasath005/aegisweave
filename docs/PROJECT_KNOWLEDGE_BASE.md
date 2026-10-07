@@ -1002,7 +1002,7 @@ Boosted trees per label on Friday: DDoS 99.98 %, PortScan 99.12 %, **Botnet 0 of
 
 1. **Synthetic tests were inspected during development.** They are exploratory, not confirmatory. The confirmation run uses the same generator.
 2. **IoT-23 protocol A is interleaved, not forward-in-time.** Blocks alternate between train and test within a capture, so it is optimistic.
-3. **Context isolation was corrected afterwards.** The original IoT-23 results (`iot23.json`) predate the context-isolation fix. The corrected run (`iot23-context-v2.json`) exists, but the README tables still show the historical numbers.
+3. **Context isolation was corrected afterwards.** The original IoT-23 results (`iot23.json`) predate the context-isolation fix. The corrected run (`iot23-context-v2.json`) is now the README's primary table; the historical tables are kept and labelled.
 4. **The held-out captures have been seen.** After inspection, captures 8-1 and 5-1 are development data. A new untouched test set is needed for final claims.
 5. **No hyperparameter search** was performed. Parameters were fixed by hand, which avoids overfitting to the test set but may leave performance unexplored.
 6. **One seed** for most experiments; seed variance was not systematically reported.
@@ -1346,7 +1346,7 @@ Versions are from `requirements.lock` and `pyproject.toml`; the tools on the dev
 | Office pilot (≥ 14 days) | PLANNED | `docs/PRODUCTION_TARGET.md` | Authorisation, site data | High |
 | Alert notifications (email/webhook) | NOT IMPLEMENTED | — | Design | Medium |
 | Adversarial / evasion testing | NOT IMPLEMENTED | — | Design experiments | Medium |
-| README and report up to date | PARTIAL | README says 137 tests and shows historical IoT-23 tables; report says 136 tests | Refresh with v2 results and current counts | Medium |
+| README and report up to date | PARTIAL | README updated 7 Oct 2026 (164 tests, v2 IoT-23 and CIC tables); the generated report still says 136 tests | Regenerate the report | Medium |
 
 ---
 
@@ -1404,7 +1404,7 @@ On the research side:
 8. **Two-person approval** for containment requests.
 9. **Alert notification channel** and alert suppression / summarisation.
 10. **Adversarial and evasion evaluation.**
-11. **Refresh the README and report** to the v2 results and current test counts.
+11. **Regenerate the project report** (`docs/report/`) with the v2 results and current test counts. The README was refreshed on 7 Oct 2026.
 12. **Scheduled backups** and retention sized from measured volume.
 
 ### LOW
@@ -1587,7 +1587,7 @@ Retrained metrics should match the committed JSON when versions are pinned and s
   - The context-isolation correction came after the original results.
   - All held-out captures have been inspected.
   - No confirmatory untouched test.
-  - The README still shows historical tables.
+  - The generated project report still shows historical figures.
 - **Deployment.**
   - Docker and TLS never run.
   - No load test.
@@ -1632,7 +1632,7 @@ Only improvements that address a measured problem are listed. All are [PROPOSED]
 
 | Phase | Goal | Concrete tasks | Exit criterion |
 |---|---|---|---|
-| **1 — Stabilise** | Everyone can run it | Refresh the README (164 tests, v2 IoT-23 tables); fix the simulation banner; document dataset download; each member runs all tests | Every member reproduces 164 / 88 / 8 |
+| **1 — Stabilise** | Everyone can run it | Regenerate the report (README already refreshed); fix the simulation banner; document dataset download; each member runs all tests | Every member reproduces 164 / 88 / 8 |
 | **2 — Complete implementation** | Close platform gaps | Two-person approval; notification webhook; scheduled backups | New tests pass |
 | **3 — Improve ML** | Fix measured failures | Port ablation; C&C periodicity features; seed variance; reserve an untouched test set | Improvement on the v2 protocols **without** tuning on the reserved set |
 | **4 — Improve detection operations** | Site readiness | Per-site calibration procedure; alert summarisation | Benign alert rate target met on a lab / site sample |
@@ -1973,8 +1973,8 @@ Python 3.12 / scikit-learn 1.9.1 / FastAPI / SQLite / vanilla-JS application.
 
 | # | Claim A | Claim B | More current | Conclusion |
 |---|---|---|---|---|
-| 1 | `README.md`: "137 tests" | Test run on 1 Oct 2026: 164 tests | The run | README is stale |
-| 2 | README IoT-23 tables (e.g. withheld 935/936, A FPR 0.70 %) | `docs/MODEL_REVIEW_CONTEXT_V2.md` / `iot23-context-v2.json` (939/940, 0.72 %) | v2 (16 Sep 2026, corrected protocol) | Use v2; README shows historical numbers |
+| 1 | `README.md`: "137 tests" | Test run on 1 Oct 2026: 164 tests | The run | Fixed in the README on 7 Oct 2026 |
+| 2 | README IoT-23 tables (e.g. withheld 935/936, A FPR 0.70 %) | `docs/MODEL_REVIEW_CONTEXT_V2.md` / `iot23-context-v2.json` (939/940, 0.72 %) | v2 (16 Sep 2026, corrected protocol) | Use v2. The README now leads with v2 and labels the old tables historical (7 Oct 2026) |
 | 3 | `datasets.py`: `UNSW_SOURCE` = official UNSW page | `unsw.json`: downloaded from a GitHub mirror | The result file records the actual download | Data came from a mirror, hashed but not authenticated |
 | 4 | Project report (`docs/report`): 136 tests; collector byte counts "exact" | Continuation review: estimates are disclosed; 164 tests | Continuation review and code | The report is a snapshot from 14 Sep 2026 |
 | 5 | Dashboard banner: "Replay generates synthetic telemetry" | Real IoT-23 replays shown in the same UI | The code: the banner is static text in `frontend/index.html` | The UI message is inaccurate for real replays |
